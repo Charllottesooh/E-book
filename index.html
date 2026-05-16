@@ -355,25 +355,37 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--off
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 24px;text-align:center;color:var(--g400)}
 .empty-icon{font-size:40px;margin-bottom:12px;opacity:.5}
 
-/* ── TAB 2: 통계 ── */
+/* ── TAB 2: 통계 리스트 ── */
 .stats-layout{width:100%;overflow-y:auto;padding:24px}
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
-.stat-card{background:var(--white);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow-sm);border:1px solid var(--g100);animation:cardIn .3s ease both}
-.stat-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
-.stat-customer{font-size:15px;font-weight:900;color:var(--black)}
-.stat-file{font-size:11px;color:var(--g400);margin-top:2px}
-.stat-viewed{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700}
-.stat-viewed.yes{color:#006428}
-.stat-viewed.no{color:var(--g400)}
-.stat-rows{display:flex;flex-direction:column;gap:7px}
-.stat-row{display:flex;justify-content:space-between;font-size:12px}
-.stat-row-label{color:var(--g400)}
-.stat-row-val{font-weight:700;color:var(--black)}
-.stat-progress{margin-top:10px}
-.stat-progress-label{font-size:11px;color:var(--g400);margin-bottom:4px;display:flex;justify-content:space-between}
-.stat-bar-bg{height:5px;background:var(--g100);border-radius:3px;overflow:hidden}
-.stat-bar{height:100%;background:var(--red);border-radius:3px;transition:width .5s}
-.stats-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px;text-align:center;color:var(--g400);width:100%}
+.stats-table-wrap{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow-sm);border:1px solid var(--g100);overflow:hidden}
+.stats-table{width:100%;border-collapse:collapse;font-size:13px}
+.stats-table thead th{
+  background:var(--g50);padding:11px 14px;text-align:left;
+  font-size:11px;font-weight:700;color:var(--g600);
+  border-bottom:1.5px solid var(--g100);letter-spacing:.3px;
+  white-space:nowrap;
+}
+.stats-table tbody tr{border-bottom:1px solid var(--g100);transition:background .15s}
+.stats-table tbody tr:last-child{border-bottom:none}
+.stats-table tbody tr:hover{background:var(--g50)}
+.stats-table td{padding:12px 14px;vertical-align:middle}
+.st-customer{font-weight:900;font-size:14px;color:var(--black)}
+.st-file{font-size:11px;color:var(--g400);margin-top:2px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.st-badge-viewed{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.st-badge-viewed.yes{background:rgba(0,180,60,.1);color:#006428}
+.st-badge-viewed.no{background:var(--g100);color:var(--g400)}
+.st-date{font-size:12px;color:var(--black);font-weight:500;white-space:nowrap}
+.st-count{font-size:13px;font-weight:700;color:var(--black);text-align:center}
+.st-device{font-size:12px;color:var(--g600)}
+.st-progress-wrap{display:flex;align-items:center;gap:8px;min-width:120px}
+.st-bar-bg{flex:1;height:5px;background:var(--g100);border-radius:3px;overflow:hidden}
+.st-bar{height:100%;background:var(--red);border-radius:3px}
+.st-pct{font-size:11px;font-weight:700;color:var(--red);white-space:nowrap;min-width:30px}
+.stats-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px;text-align:center;color:var(--g400);width:100%}
+.stats-refresh{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.stats-title{font-size:14px;font-weight:900;color:var(--black)}
+.btn-refresh{padding:6px 14px;border:1.5px solid var(--g200);border-radius:8px;background:none;font-size:12px;font-family:'Noto Sans KR',sans-serif;color:var(--g600);cursor:pointer;font-weight:600;transition:border-color .2s,color .2s}
+.btn-refresh:hover{border-color:var(--red);color:var(--red)}
 
 /* Responsive */
 @media(max-width:900px){
@@ -546,7 +558,11 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--off
   <!-- TAB: 열람 통계 -->
   <div id="tab-stats" class="tab-content">
     <div class="stats-layout">
-      <div id="statsGrid" class="stats-grid">
+      <div class="stats-refresh">
+        <div class="stats-title">📊 열람 통계</div>
+        <button class="btn-refresh" onclick="renderStats()">🔄 새로고침</button>
+      </div>
+      <div id="statsGrid" class="stats-table-wrap">
         <div class="stats-empty">
           <div class="empty-icon">📊</div>
           <p style="font-size:14px">아직 열람 데이터가 없습니다.</p>
@@ -875,34 +891,45 @@ function renderStats(){
     return;
   }
 
-  grid.innerHTML=links.map(l=>{
+  const rows=links.map(l=>{
     const s=stats[l.id]||{};
     const viewed=!!s.firstViewAt;
     const pct=l.totalPages?Math.round((s.lastPage||0)/l.totalPages*100):0;
-    const device=s.device==="mobile"?"📱 모바일":"🖥 PC";
-    return `<div class="stat-card">
-      <div class="stat-card-header">
-        <div>
-          <div class="stat-customer">${l.customerName}</div>
-          <div class="stat-file">📄 ${l.fileName||""}</div>
+    const device=s.device==="mobile"?"📱 모바일":s.device==="desktop"?"🖥 PC":"-";
+    return `<tr>
+      <td>
+        <div class="st-customer">${l.customerName}</div>
+        <div class="st-file">📄 ${l.fileName||""}</div>
+      </td>
+      <td><span class="st-badge-viewed ${viewed?"yes":"no"}">${viewed?"✅ 열람":"⬜ 미열람"}</span></td>
+      <td class="st-date">${s.firstViewAt?fmtDate(s.firstViewAt):"-"}</td>
+      <td class="st-date">${s.lastViewAt?fmtDate(s.lastViewAt):"-"}</td>
+      <td class="st-count">${s.viewCount||0}회</td>
+      <td>
+        <div class="st-progress-wrap">
+          <div class="st-bar-bg"><div class="st-bar" style="width:${pct}%"></div></div>
+          <span class="st-pct">${s.lastPage||0}/${l.totalPages||"?"}p</span>
         </div>
-        <div class="stat-viewed ${viewed?"yes":"no"}">
-          ${viewed?"✅ 열람함":"⬜ 미열람"}
-        </div>
-      </div>
-      <div class="stat-rows">
-        <div class="stat-row"><span class="stat-row-label">최초 열람</span><span class="stat-row-val">${s.firstViewAt?fmtDate(s.firstViewAt):"-"}</span></div>
-        <div class="stat-row"><span class="stat-row-label">마지막 열람</span><span class="stat-row-val">${s.lastViewAt?fmtDate(s.lastViewAt):"-"}</span></div>
-        <div class="stat-row"><span class="stat-row-label">열람 횟수</span><span class="stat-row-val">${s.viewCount||0}회</span></div>
-        <div class="stat-row"><span class="stat-row-label">마지막 본 페이지</span><span class="stat-row-val">${s.lastPage||0} / ${l.totalPages||"?"} 페이지</span></div>
-        <div class="stat-row"><span class="stat-row-label">접속 기기</span><span class="stat-row-val">${s.viewCount?device:"-"}</span></div>
-      </div>
-      ${l.totalPages?`<div class="stat-progress">
-        <div class="stat-progress-label"><span>열람 진행률</span><span>${pct}%</span></div>
-        <div class="stat-bar-bg"><div class="stat-bar" style="width:${pct}%"></div></div>
-      </div>`:""}
-    </div>`;
+      </td>
+      <td class="st-device">${device}</td>
+    </tr>`;
   }).join("");
+
+  grid.innerHTML=`
+    <table class="stats-table">
+      <thead>
+        <tr>
+          <th>고객명</th>
+          <th>열람여부</th>
+          <th>최초열람</th>
+          <th>마지막열람</th>
+          <th>열람횟수</th>
+          <th>진행률</th>
+          <th>기기</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
 }
 
 // ── Utils ──

@@ -434,6 +434,32 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--off
   </div>
 </div>
 
+<!-- ═══════════ 비밀번호 변경 (최초 로그인) ═══════════ -->
+<div id="page-changePw" class="page active" style="align-items:center;justify-content:center;background:var(--off-white);flex-direction:column;position:relative;overflow:hidden">
+  <div class="bg-hearts" id="bgHearts2"></div>
+  <div class="login-card" style="max-width:440px">
+    <div class="logo-wrap">
+      <div class="logo-icon"><svg viewBox="0 0 100 90"><use href="#heart"/></svg></div>
+      <div class="logo-title">최초 로그인 <em>비밀번호 변경</em></div>
+      <div class="logo-sub">보안을 위해 새 비밀번호를 설정해 주세요</div>
+    </div>
+    <div class="login-divider"></div>
+    <div style="background:rgba(232,0,29,.06);border:1px solid rgba(232,0,29,.15);border-radius:10px;padding:12px 14px;margin-bottom:18px;font-size:13px;color:var(--red-dark);font-weight:500;line-height:1.6">
+      ⚠️ 임시 비밀번호로 로그인하셨습니다.<br/>새 비밀번호를 설정해야 서비스를 이용할 수 있습니다.
+    </div>
+    <div class="form-group">
+      <label class="form-label">새 비밀번호 (6자 이상)</label>
+      <input type="password" id="newPw1" class="form-input" placeholder="새 비밀번호 입력"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">새 비밀번호 확인</label>
+      <input type="password" id="newPw2" class="form-input" placeholder="새 비밀번호 재입력"/>
+    </div>
+    <button class="btn-primary" id="btnChangePw">비밀번호 변경 후 시작하기</button>
+    <div class="login-error" id="changePwError"></div>
+  </div>
+</div>
+
 <!-- ═══════════ DASHBOARD ═══════════ -->
 <div id="page-dashboard" class="page" style="flex-direction:column">
   <!-- Top Nav -->
@@ -560,7 +586,10 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--off
     <div class="stats-layout">
       <div class="stats-refresh">
         <div class="stats-title">📊 열람 통계</div>
-        <button class="btn-refresh" onclick="renderStats()">🔄 새로고침</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn-refresh" onclick="downloadExcel()">📥 엑셀 다운로드</button>
+          <button class="btn-refresh" onclick="renderStats()">🔄 새로고침</button>
+        </div>
       </div>
       <div id="statsGrid" class="stats-table-wrap">
         <div class="stats-empty">
@@ -577,7 +606,8 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--off
 <!-- Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged,
+  updatePassword, EmailAuthProvider, reauthenticateWithCredential }
   from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
 import { getFirestore, collection, doc, setDoc, getDoc, getDocs, updateDoc, deleteDoc, query, orderBy, onSnapshot }
   from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
@@ -596,6 +626,7 @@ const FB = {
 const SUPER_ADMIN = "sweetysooh@gmail.com";
 const BITLY_TOKEN = "bb1dd2c494496ad5d4456dd552bb849fa0054af2";
 const VIEWER_BASE = "https://charllottesooh.github.io/E-book/viewer.html";
+let currentRole = "staff"; // 현재 로그인 역할
 
 const app     = initializeApp(FB);
 const auth    = getAuth(app);
@@ -603,12 +634,22 @@ const db      = getFirestore(app);
 const storage = getStorage(app);
 
 // ── Auth ──
-onAuthStateChanged(auth, user => {
+onAuthStateChanged(auth, async user => {
   if(user){
-    const role = user.email===SUPER_ADMIN ? "super" : "staff";
+    currentRole = user.email===SUPER_ADMIN ? "super" : "staff";
     document.getElementById("userEmail").textContent = user.email;
-    document.getElementById("roleBadge").textContent = role==="super" ? "슈퍼관리자" : "일반직원";
-    document.getElementById("roleBadge").className = "badge-role "+(role==="super"?"super":"staff");
+    document.getElementById("roleBadge").textContent = currentRole==="super" ? "슈퍼관리자" : "일반직원";
+    document.getElementById("roleBadge").className = "badge-role "+(currentRole==="super"?"super":"staff");
+
+    // 최초 로그인 감지 (metadata: creationTime === lastSignInTime 이면 최초)
+    const meta = user.metadata;
+    const isFirst = meta.creationTime === meta.lastSignInTime;
+    if(isFirst && currentRole !== "super"){
+      // 최초 로그인 → 비밀번호 변경 화면
+      showPage("changePw");
+      return;
+    }
+
     showPage("dashboard");
     loadLinks();
     setupStatsListener();
@@ -637,6 +678,44 @@ document.getElementById("btnLogin").onclick = async () => {
   }finally{btn.disabled=false;btn.innerHTML="로그인"}
 };
 document.getElementById("btnLogout").onclick = ()=>signOut(auth);
+
+// ── 비밀번호 변경 (최초 로그인) ──
+document.getElementById("btnChangePw").onclick = async () => {
+  const pw1 = document.getElementById("newPw1").value;
+  const pw2 = document.getElementById("newPw2").value;
+  const err = document.getElementById("changePwError");
+  const btn = document.getElementById("btnChangePw");
+
+  err.classList.remove("show");
+  if(pw1.length < 6){ showChangePwErr("비밀번호는 6자 이상이어야 합니다."); return }
+  if(pw1 !== pw2){ showChangePwErr("비밀번호가 일치하지 않습니다."); return }
+
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span>변경 중...';
+  try{
+    await updatePassword(auth.currentUser, pw1);
+    showToast("✅ 비밀번호가 변경되었습니다!");
+    showPage("dashboard");
+    loadLinks();
+    setupStatsListener();
+  }catch(e){
+    if(e.code==="auth/requires-recent-login"){
+      showChangePwErr("보안을 위해 다시 로그인 후 시도해 주세요.");
+      setTimeout(()=>signOut(auth), 2000);
+    } else {
+      showChangePwErr("오류가 발생했습니다: "+e.message);
+    }
+  }finally{
+    btn.disabled=false;
+    btn.innerHTML="비밀번호 변경 후 시작하기";
+  }
+};
+
+function showChangePwErr(msg){
+  const el=document.getElementById("changePwError");
+  el.textContent=msg; el.classList.remove("show");
+  void el.offsetWidth; el.classList.add("show");
+}
 document.addEventListener("keydown",e=>{
   if(e.key==="Enter"&&document.getElementById("page-login").classList.contains("active"))
     document.getElementById("btnLogin").click();
@@ -771,18 +850,19 @@ function uploadPDF(file){
   });
 }
 
-// ── Bitly 단축 URL ──
+// ── 단축 URL (TinyURL - CORS 허용) ──
 async function createShortUrl(longUrl){
   try{
-    const res=await fetch("https://api-ssl.bitly.com/v4/shorten",{
-      method:"POST",
-      headers:{"Authorization":"Bearer "+BITLY_TOKEN,"Content-Type":"application/json"},
-      body:JSON.stringify({long_url:longUrl})
-    });
-    const data=await res.json();
-    return data.link||longUrl;
+    const res=await fetch(
+      "https://tinyurl.com/api-create.php?url="+encodeURIComponent(longUrl),
+      {method:"GET"}
+    );
+    if(!res.ok) throw new Error("TinyURL 실패");
+    const short=await res.text();
+    if(short.startsWith("http")) return short.trim();
+    throw new Error("잘못된 응답");
   }catch(e){
-    console.error("Bitly 오류:",e);
+    console.error("단축URL 오류:",e);
     return longUrl;
   }
 }
@@ -842,7 +922,7 @@ function renderLinks(){
       <div class="card-actions">
         <button class="btn-card copy" onclick="copyUrl('${l.shortUrl||l.viewerUrl||""}')">링크복사</button>
         <button class="btn-card" onclick="toggleActive('${l.id}',${!l.active})">${l.active?"비활성화":"활성화"}</button>
-        <button class="btn-card danger" onclick="deleteLink('${l.id}','${encodeURIComponent(l.pdfUrl||"")}')">삭제</button>
+        ${currentRole==="super"?`<button class="btn-card danger" onclick="deleteLink('${l.id}','${encodeURIComponent(l.pdfUrl||"")}')">삭제</button>`:""}
       </div>
     </div>`;
   }).join("");
@@ -912,6 +992,7 @@ function renderStats(){
         </div>
       </td>
       <td class="st-device">${device}</td>
+      <td><button class="btn-card" onclick="printConfirm('${l.id}')" style="white-space:nowrap">📄 확인서</button></td>
     </tr>`;
   }).join("");
 
@@ -926,6 +1007,7 @@ function renderStats(){
           <th>열람횟수</th>
           <th>진행률</th>
           <th>기기</th>
+          <th>확인서</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -941,6 +1023,131 @@ function fmtDate(iso){
   const d=new Date(iso);
   return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}.${String(d.getDate()).padStart(2,"0")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
 }
+
+// ── 엑셀 다운로드 ──
+function downloadExcel(){
+  const links=window._links||[];
+  const stats=window._stats||{};
+  if(!links.length){showToast("다운로드할 데이터가 없습니다.");return}
+
+  // BOM + CSV (엑셀 한글 깨짐 방지)
+  const BOM="﻿";
+  const headers=["고객명","파일명","열람여부","최초열람일시","마지막열람일시","열람횟수","마지막페이지","전체페이지","열람진행률","접속기기","링크주소","단축주소","발송일자","만료일자","링크상태"];
+  const rows=links.map(l=>{
+    const s=stats[l.id]||{};
+    const viewed=!!s.firstViewAt?"열람":"미열람";
+    const pct=l.totalPages&&s.lastPage?Math.round(s.lastPage/l.totalPages*100)+"%":"-";
+    const device=s.device==="mobile"?"모바일":s.device==="desktop"?"PC":"-";
+    const active=l.active&&!(l.expireDate&&new Date(l.expireDate)<new Date())?"활성":"비활성";
+    return [
+      l.customerName||"",
+      l.fileName||"",
+      viewed,
+      s.firstViewAt?fmtDate(s.firstViewAt):"-",
+      s.lastViewAt?fmtDate(s.lastViewAt):"-",
+      (s.viewCount||0)+"회",
+      s.lastPage||0,
+      l.totalPages||"-",
+      pct,
+      device,
+      l.viewerUrl||"",
+      l.shortUrl||"",
+      l.sendDate||"",
+      l.expireDate||"무제한",
+      active,
+    ].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",");
+  });
+
+  const csv=BOM+headers.map(h=>`"${h}"`).join(",")+"
+"+rows.join("
+");
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download=`둘둘치킨_열람통계_${today()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("📥 엑셀 파일 다운로드 완료!");
+}
+
+// ── 열람확인서 출력 ──
+window.printConfirm=function(linkId){
+  const links=window._links||[];
+  const stats=window._stats||{};
+  const l=links.find(x=>x.id===linkId);
+  const s=stats[linkId]||{};
+  if(!l){showToast("데이터 없음");return}
+
+  const viewed=!!s.firstViewAt;
+  const pct=l.totalPages&&s.lastPage?Math.round(s.lastPage/l.totalPages*100):0;
+  const device=s.device==="mobile"?"모바일 (스마트폰/태블릿)":s.device==="desktop"?"PC/노트북":"-";
+  const now=fmtDate(new Date().toISOString());
+
+  const w=window.open("","_blank","width=700,height=900");
+  w.document.write(`<!DOCTYPE html><html lang="ko"><head>
+  <meta charset="UTF-8"/>
+  <title>열람확인서</title>
+  <style>
+    body{font-family:'맑은 고딕',sans-serif;padding:60px;color:#111;max-width:680px;margin:0 auto}
+    h1{font-size:22px;font-weight:900;text-align:center;margin-bottom:6px;color:#1a0a0a}
+    .sub{text-align:center;font-size:13px;color:#888;margin-bottom:36px}
+    .divider{border:none;border-top:2px solid #E8001D;margin:20px 0}
+    table{width:100%;border-collapse:collapse;margin-bottom:24px}
+    td{padding:10px 14px;font-size:13px;border-bottom:1px solid #eee;vertical-align:top}
+    td:first-child{width:140px;font-weight:700;color:#6B4040;background:#fdf5f5}
+    .status{display:inline-block;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:700;
+      background:${viewed?"rgba(0,180,60,.12)":"#f5e8e8"};
+      color:${viewed?"#006428":"#b08080"}}
+    .bar-bg{height:8px;background:#f0e8e8;border-radius:4px;overflow:hidden;margin-top:6px}
+    .bar{height:100%;background:#E8001D;border-radius:4px;width:${pct}%}
+    .footer{margin-top:40px;text-align:center;font-size:11px;color:#aaa}
+    .stamp{
+      border:3px solid #E8001D;border-radius:50%;width:90px;height:90px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:13px;font-weight:900;color:#E8001D;text-align:center;
+      margin:20px auto;line-height:1.4;
+    }
+    @media print{button{display:none}}
+  </style>
+  </head><body>
+  <div style="text-align:center;margin-bottom:16px">
+    <svg width="36" height="36" viewBox="0 0 100 90" style="vertical-align:middle">
+      <rect width="100" height="100" rx="20" fill="white" stroke="#E8001D" stroke-width="6"/>
+      <path d="M50 85 C50 85 5 55 5 28 C5 13 17 3 30 3 C38 3 45 7 50 14 C55 7 62 3 70 3 C83 3 95 13 95 28 C95 55 50 85 50 85Z" fill="#E8001D"/>
+    </svg>
+  </div>
+  <h1>전자문서 열람 확인서</h1>
+  <div class="sub">둘둘치킨 E-Book 시스템 발행</div>
+  <hr class="divider"/>
+  <table>
+    <tr><td>수신인 (고객명)</td><td><strong>${l.customerName}</strong></td></tr>
+    <tr><td>제공 문서</td><td>${l.fileName||"-"}</td></tr>
+    <tr><td>열람 여부</td><td><span class="status">${viewed?"✅ 열람 확인":"⬜ 미열람"}</span></td></tr>
+    <tr><td>최초 열람 일시</td><td><strong>${s.firstViewAt?fmtDate(s.firstViewAt):"-"}</strong></td></tr>
+    <tr><td>마지막 열람 일시</td><td>${s.lastViewAt?fmtDate(s.lastViewAt):"-"}</td></tr>
+    <tr><td>총 열람 횟수</td><td>${s.viewCount||0}회</td></tr>
+    <tr><td>열람 진행률</td><td>
+      ${s.lastPage||0}페이지 / ${l.totalPages||"?"}페이지 (${pct}%)
+      <div class="bar-bg"><div class="bar"></div></div>
+    </td></tr>
+    <tr><td>접속 기기</td><td>${device}</td></tr>
+    <tr><td>문서 링크</td><td style="font-size:11px;word-break:break-all">${l.shortUrl||l.viewerUrl||"-"}</td></tr>
+    <tr><td>발송일자</td><td>${l.sendDate||"-"}</td></tr>
+    <tr><td>열람 만료일</td><td>${l.expireDate||"무제한"}</td></tr>
+  </table>
+  <div class="stamp">열람<br/>확인</div>
+  <div class="footer">
+    본 확인서는 둘둘치킨 E-Book 시스템에서 자동 발행되었습니다.<br/>
+    확인서 발행일시: ${now}
+  </div>
+  <br/>
+  <div style="text-align:center">
+    <button onclick="window.print()" style="padding:10px 28px;background:#E8001D;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer">🖨️ 인쇄 / PDF 저장</button>
+  </div>
+  </body></html>`);
+  w.document.close();
+};
 </script>
 
 <script>
@@ -956,7 +1163,8 @@ window.switchTab=function(name){
 
 function showPage(name){
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
-  document.getElementById("page-"+name).classList.add("active");
+  const el=document.getElementById("page-"+name);
+  if(el) el.classList.add("active");
 }
 
 function showLoginErr(msg){

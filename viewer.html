@@ -15,7 +15,7 @@
 <style>
 :root{
   --red:#E8001D;--white:#fff;
-  --bg-dark:#1a2340;
+  --bg-dark:#0a0f2e;
   --topbar-h:52px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -36,7 +36,7 @@ html,body{
 ══════════════════════════════ */
 .error-page{
   flex-direction:column;align-items:center;justify-content:center;
-  background:var(--bg-dark);padding:32px;text-align:center;
+  background:#0a0f2e;padding:32px;text-align:center;
 }
 .error-card{
   background:#fff;border-radius:24px;padding:48px 40px;
@@ -129,15 +129,74 @@ html,body{
 .v-loading-txt{font-size:14px;color:rgba(255,255,255,.7);font-weight:500}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* Canvas 컨테이너 */
-.canvas-wrap{
+/* ── 책 컨테이너 ── */
+.book-container{
   position:relative;
-  box-shadow:0 20px 80px rgba(0,0,0,.8);
-  background:#fff;
-  transition:opacity .15s;
-  /* 스와이프 중 슬라이드 */
+  display:flex;align-items:center;justify-content:center;
 }
-.canvas-wrap.fade{opacity:0}
+.spread-wrap{
+  display:flex;align-items:stretch;
+  box-shadow:0 24px 80px rgba(0,0,0,.85);
+  position:relative;
+}
+.page-slot{
+  position:relative;overflow:hidden;background:#fff;
+  flex-shrink:0;
+}
+.left-slot{border-right:1px solid #ddd}
+.right-slot{border-left:1px solid #ddd}
+.page-slot canvas{display:block}
+.page-shadow-left{
+  position:absolute;top:0;right:0;width:40px;height:100%;
+  background:linear-gradient(to left,rgba(0,0,0,.18),transparent);
+  pointer-events:none;z-index:2;
+}
+.page-shadow-right{
+  position:absolute;top:0;left:0;width:40px;height:100%;
+  background:linear-gradient(to right,rgba(0,0,0,.12),transparent);
+  pointer-events:none;z-index:2;
+}
+.book-spine{
+  width:10px;flex-shrink:0;
+  background:linear-gradient(to right,#bbb 0%,#f0f0f0 40%,#e0e0e0 60%,#bbb 100%);
+  box-shadow:inset 0 0 6px rgba(0,0,0,.2);
+}
+
+/* ── 페이지 넘기기 오버레이 ── */
+.flip-overlay{
+  position:absolute;top:0;bottom:0;
+  width:50%;pointer-events:none;z-index:20;
+  transform-style:preserve-3d;
+  display:none;
+}
+.flip-overlay.from-right{
+  right:0;transform-origin:left center;
+}
+.flip-overlay.from-left{
+  left:0;transform-origin:right center;
+}
+.flip-overlay canvas{
+  position:absolute;top:0;left:0;
+  width:100%;height:100%;
+  object-fit:fill;
+}
+/* 페이지 넘기기 애니메이션 */
+@keyframes flipForward{
+  0%  {transform:rotateY(0deg);box-shadow:0 0 0 rgba(0,0,0,0)}
+  30% {box-shadow:-8px 0 20px rgba(0,0,0,.3)}
+  100%{transform:rotateY(-180deg);box-shadow:0 0 0 rgba(0,0,0,0)}
+}
+@keyframes flipBackward{
+  0%  {transform:rotateY(0deg)}
+  100%{transform:rotateY(180deg)}
+}
+.flip-overlay.animating-forward{
+  animation:flipForward .5s cubic-bezier(.645,.045,.355,1) forwards;
+}
+.flip-overlay.animating-backward{
+  animation:flipBackward .5s cubic-bezier(.645,.045,.355,1) forwards;
+}
+
 canvas{display:block}
 
 /* 좌우 화살표 (PC) */
@@ -167,12 +226,13 @@ canvas{display:block}
 }
 
 /* ── 반응형 ── */
-@media(max-width:600px){
+@media(max-width:700px){
   .v-logo-text{display:none}
   .v-customer{display:none}
   .vbtn{padding:5px 10px;font-size:11px}
   .v-pagenum{min-width:56px;font-size:11px}
   .nav-arrow{display:none}
+  .book-spine{display:none}
 }
 </style>
 </head>
@@ -260,9 +320,24 @@ canvas{display:block}
     <div class="nav-arrow left hidden" id="arrowL" onclick="goPage(-1)">‹</div>
     <div class="nav-arrow right hidden" id="arrowR" onclick="goPage(1)">›</div>
 
-    <!-- 캔버스 -->
-    <div class="canvas-wrap" id="canvasWrap" style="display:none">
-      <canvas id="mainCanvas"></canvas>
+    <!-- 캔버스 (PC: 2페이지 / 모바일: 1페이지) -->
+    <div class="book-container" id="bookContainer" style="display:none">
+      <!-- 페이지 넘기기 애니메이션 오버레이 -->
+      <div class="flip-overlay" id="flipOverlay">
+        <canvas id="flipCanvas"></canvas>
+      </div>
+      <!-- 실제 페이지 -->
+      <div class="spread-wrap" id="spreadWrap">
+        <div class="page-slot left-slot" id="leftSlot">
+          <canvas id="canvasLeft"></canvas>
+          <div class="page-shadow-left"></div>
+        </div>
+        <div class="book-spine" id="bookSpine"></div>
+        <div class="page-slot right-slot" id="rightSlot">
+          <canvas id="canvasRight"></canvas>
+          <div class="page-shadow-right"></div>
+        </div>
+      </div>
     </div>
 
     <!-- 모바일 힌트 -->
@@ -292,10 +367,11 @@ const db  = getFirestore(app);
 
 // ── 상태 ──
 let pdfDoc=null, curPage=1, totalPages=0;
-let isRendering=false, pendingPage=null;
+let isRendering=false, isFlipping=false;
 let linkData=null, linkId=null;
-const DPR=Math.min(window.devicePixelRatio||1,3);
-const isMobile=()=>window.innerWidth<=600;
+const DPR=Math.min(window.devicePixelRatio||1,2);
+const isMobile=()=>window.innerWidth<=700;
+let pageW=0, pageH=0;
 
 // ── URL 파라미터 ──
 const id=new URLSearchParams(location.search).get("id");
@@ -353,7 +429,7 @@ async function startViewer(d){
     try{ await updateDoc(doc(db,"links",linkId),{totalPages}); }catch(e){}
     curPage=1;
     hideLoading();
-    await renderPage(curPage);
+    await initSpread();
     setupNav();
     setupSwipe();
     hideTapHint();
@@ -364,70 +440,122 @@ async function startViewer(d){
   }
 }
 
-// ── 고해상도 렌더 ──
-async function renderPage(num){
-  if(isRendering){ pendingPage=num; return }
-  isRendering=true;
-
+// ── 크기 계산 ──
+async function initSpread(){
   const body=document.getElementById("viewerBody");
-  const topH=52;
-  const availW=body.clientWidth-(isMobile()?0:120);
-  const availH=body.clientHeight-16;
+  const mob=isMobile();
+  const availW=body.clientWidth-(mob?0:130);
+  const availH=body.clientHeight-20;
 
-  const page=await pdfDoc.getPage(num);
-  const vp0=page.getViewport({scale:1});
+  const sample=await pdfDoc.getPage(1);
+  const vp0=sample.getViewport({scale:1});
 
-  // 화면 꽉 차게 (비율 유지)
-  const scaleW=availW/vp0.width;
-  const scaleH=availH/vp0.height;
-  const scale=Math.min(scaleW,scaleH)*DPR;
+  const slots=mob?1:2;
+  let w=Math.floor(availW/slots);
+  let h=Math.floor(w/vp0.width*vp0.height);
+  if(h>availH){h=availH;w=Math.floor(h/vp0.height*vp0.width)}
+  pageW=w; pageH=h;
 
-  const vp=page.getViewport({scale});
-  const canvas=document.getElementById("mainCanvas");
-  const ctx=canvas.getContext("2d");
+  // spine 표시 여부
+  document.getElementById("bookSpine").style.display=mob?"none":"";
+  document.getElementById("rightSlot").style.display=mob?"none":"";
 
-  canvas.width=vp.width;
-  canvas.height=vp.height;
-  canvas.style.width=(vp.width/DPR)+"px";
-  canvas.style.height=(vp.height/DPR)+"px";
-
-  await page.render({canvasContext:ctx,viewport:vp}).promise;
-
-  document.getElementById("canvasWrap").style.display="";
-  updateNav(num);
-
-  isRendering=false;
-  if(pendingPage!==null&&pendingPage!==num){
-    const next=pendingPage; pendingPage=null;
-    await renderPage(next);
-  }
+  document.getElementById("bookContainer").style.display="";
+  await renderSpread(curPage);
 }
 
-// ── 페이지 이동 ──
+// ── 페이지 렌더 (고해상도) ──
+async function renderOnCanvas(num, canvas){
+  if(num<1||num>totalPages){
+    const ctx=canvas.getContext("2d");
+    ctx.fillStyle="#fff";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    return;
+  }
+  const page=await pdfDoc.getPage(num);
+  const vp0=page.getViewport({scale:1});
+  const scale=Math.min(pageW/vp0.width,pageH/vp0.height)*DPR;
+  const vp=page.getViewport({scale});
+  canvas.width=vp.width; canvas.height=vp.height;
+  canvas.style.width=pageW+"px"; canvas.style.height=pageH+"px";
+  await page.render({canvasContext:canvas.getContext("2d"),viewport:vp}).promise;
+}
+
+async function renderSpread(left){
+  const mob=isMobile();
+  const cL=document.getElementById("canvasLeft");
+  const cR=document.getElementById("canvasRight");
+  await renderOnCanvas(left,cL);
+  if(!mob) await renderOnCanvas(left+1,cR);
+  updateNav(left);
+}
+
+// ── 페이지 이동 (책장 넘기기) ──
 window.goPage=async function(dir){
-  const next=curPage+dir;
+  if(isFlipping) return;
+  const mob=isMobile();
+  const step=mob?1:2;
+  const next=curPage+(dir>0?step:-step);
   if(next<1||next>totalPages) return;
-  curPage=next;
-  document.getElementById("canvasWrap").classList.add("fade");
-  await renderPage(curPage);
-  document.getElementById("canvasWrap").classList.remove("fade");
-  // 통계: 마지막 페이지 업데이트
+  isFlipping=true;
+
+  // 넘길 페이지 캔버스 미리 렌더
+  const flipCanvas=document.getElementById("flipCanvas");
+  const flipPage=dir>0?(mob?curPage:curPage+1):next;
+  await renderOnCanvas(flipPage,flipCanvas);
+  flipCanvas.style.width=pageW+"px";
+  flipCanvas.style.height=pageH+"px";
+
+  // 오버레이 위치 설정
+  const ov=document.getElementById("flipOverlay");
+  const sw=document.getElementById("spreadWrap");
+  const rect=sw.getBoundingClientRect();
+  ov.style.cssText=`position:absolute;top:0;height:${pageH}px;width:${pageW}px;display:block;transform-style:preserve-3d;`;
+
+  if(dir>0){
+    // 오른쪽 페이지가 왼쪽으로 넘어감
+    ov.style.right="0";ov.style.left="auto";
+    ov.style.transformOrigin="left center";
+    ov.className="flip-overlay from-right";
+  } else {
+    // 왼쪽 페이지가 오른쪽으로 넘어감
+    ov.style.left="0";ov.style.right="auto";
+    ov.style.transformOrigin="right center";
+    ov.className="flip-overlay from-left";
+  }
+
+  // 애니메이션 시작
+  requestAnimationFrame(()=>{
+    ov.classList.add(dir>0?"animating-forward":"animating-backward");
+  });
+
+  // 애니메이션 중 실제 페이지 렌더
+  setTimeout(async()=>{
+    curPage=next;
+    await renderSpread(curPage);
+    ov.style.display="none";
+    ov.className="flip-overlay";
+    isFlipping=false;
+  },260);
+
+  // 통계
   try{
     await setDoc(doc(db,"stats",linkId),{
-      lastPage:curPage,
-      lastViewAt:new Date().toISOString(),
+      lastPage:next,lastViewAt:new Date().toISOString(),
     },{merge:true});
   }catch(e){}
 };
 
 function updateNav(num){
-  document.getElementById("pageNum").textContent=num+" / "+totalPages;
+  const mob=isMobile();
+  const rightPage=mob?num:num+1;
+  const last=mob?totalPages:totalPages-1;
+  const display=mob?num+" / "+totalPages:num+" - "+Math.min(num+1,totalPages)+" / "+totalPages;
+  document.getElementById("pageNum").textContent=display;
   document.getElementById("btnPrev").disabled=num<=1;
-  document.getElementById("btnNext").disabled=num>=totalPages;
-  const aL=document.getElementById("arrowL");
-  const aR=document.getElementById("arrowR");
-  aL.classList.toggle("hidden",num<=1);
-  aR.classList.toggle("hidden",num>=totalPages);
+  document.getElementById("btnNext").disabled=mob?num>=totalPages:num+1>=totalPages;
+  document.getElementById("arrowL").classList.toggle("hidden",num<=1);
+  document.getElementById("arrowR").classList.toggle("hidden",mob?num>=totalPages:num+1>=totalPages);
 }
 
 function setupNav(){

@@ -435,7 +435,7 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--off
 </div>
 
 <!-- ═══════════ 비밀번호 변경 (최초 로그인) ═══════════ -->
-<div id="page-changePw" class="page active" style="align-items:center;justify-content:center;background:var(--off-white);flex-direction:column;position:relative;overflow:hidden">
+<div id="page-changePw" class="page" style="align-items:center;justify-content:center;background:var(--off-white);flex-direction:column;position:relative;overflow:hidden">
   <div class="bg-hearts" id="bgHearts2"></div>
   <div class="login-card" style="max-width:440px">
     <div class="logo-wrap">
@@ -880,6 +880,13 @@ function loadLinks(){
 
 document.getElementById("searchInput").oninput=renderLinks;
 
+// ── 삭제 버튼 (슈퍼관리자만) ──
+function getDeleteBtn(id, pdfUrl){
+  if(currentRole !== "super") return "";
+  const eid = encodeURIComponent(pdfUrl||"");
+  return "<button class=\"btn-card danger\" onclick=\"deleteLink('"+id+"','"+eid+"')\">"+"삭제</button>";
+}
+
 function renderLinks(){
   const q=document.getElementById("searchInput").value.toLowerCase();
   const links=(window._links||[]).filter(l=>l.customerName?.toLowerCase().includes(q));
@@ -922,7 +929,7 @@ function renderLinks(){
       <div class="card-actions">
         <button class="btn-card copy" onclick="copyUrl('${l.shortUrl||l.viewerUrl||""}')">링크복사</button>
         <button class="btn-card" onclick="toggleActive('${l.id}',${!l.active})">${l.active?"비활성화":"활성화"}</button>
-        ${currentRole==="super"?`<button class="btn-card danger" onclick="deleteLink('${l.id}','${encodeURIComponent(l.pdfUrl||"")}')">삭제</button>`:""}
+        getDeleteBtn(l.id, l.pdfUrl),
       </div>
     </div>`;
   }).join("");

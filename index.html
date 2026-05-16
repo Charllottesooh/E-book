@@ -214,23 +214,56 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--off
 .pw-error.show{display:block}
 
 /* ════ VIEWER ════ */
-#page-viewer{flex-direction:column;background:#1a1a1a}
-.viewer-topbar{background:#111;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0;border-bottom:1px solid #333}
+#page-viewer{flex-direction:column;background:#2a2a2a;user-select:none}
+.viewer-topbar{background:#111;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0;border-bottom:1px solid #333;z-index:10}
 .viewer-logo{display:flex;align-items:center;gap:8px}
-.viewer-logo-icon{width:28px;height:28px;background:#fff;border:1px solid var(--red);border-radius:6px;display:flex;align-items:center;justify-content:center}
-.viewer-logo-icon svg{width:18px;height:18px;fill:var(--red)}
+.viewer-logo-icon{width:30px;height:30px;background:#fff;border:1px solid var(--red);border-radius:7px;display:flex;align-items:center;justify-content:center}
+.viewer-logo-icon svg{width:19px;height:19px;fill:var(--red)}
 .viewer-logo-text{font-size:13px;font-weight:700;color:#fff}
-.viewer-info{font-size:12px;color:#888}
-.viewer-page-ctrl{display:flex;align-items:center;gap:10px}
-.viewer-page-ctrl button{padding:5px 12px;background:#333;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:background .15s}
-.viewer-page-ctrl button:hover{background:var(--red)}
-.viewer-page-ctrl button:disabled{background:#222;color:#555;cursor:not-allowed}
-.viewer-page-num{font-size:12px;color:#aaa;min-width:70px;text-align:center}
-.viewer-body{flex:1;overflow:auto;display:flex;justify-content:center;align-items:flex-start;padding:20px}
-.viewer-canvas-wrap{position:relative;background:#fff;box-shadow:0 8px 40px rgba(0,0,0,.5)}
-#pdfCanvas{display:block}
-.viewer-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;color:#888;gap:12px;padding:60px}
-.viewer-spinner{width:36px;height:36px;border:3px solid #333;border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite}
+.viewer-info{font-size:12px;color:#888;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.viewer-controls{display:flex;align-items:center;gap:8px}
+.vbtn{padding:7px 16px;background:#333;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:background .15s;white-space:nowrap}
+.vbtn:hover{background:var(--red)}
+.vbtn:disabled{background:#222;color:#444;cursor:not-allowed}
+.vbtn.icon{padding:7px 10px;font-size:16px}
+.viewer-page-num{font-size:12px;color:#aaa;min-width:80px;text-align:center}
+
+/* 책 컨테이너 */
+.viewer-body{flex:1;overflow:hidden;display:flex;justify-content:center;align-items:center;padding:24px;position:relative}
+.book-scene{perspective:2000px;display:flex;align-items:center;justify-content:center}
+.book-wrap{display:flex;align-items:stretch;position:relative;box-shadow:0 20px 80px rgba(0,0,0,.8);border-radius:2px}
+
+/* 페이지 공통 */
+.book-page{position:relative;overflow:hidden;background:#fff;flex-shrink:0}
+.book-page canvas{display:block}
+.page-left{border-right:1px solid #ddd;box-shadow:inset -4px 0 12px rgba(0,0,0,.08);}
+.page-right{border-left:1px solid #ddd;box-shadow:inset 4px 0 12px rgba(0,0,0,.08);}
+.book-spine{width:8px;background:linear-gradient(to right,#bbb,#eee,#bbb);flex-shrink:0;box-shadow:0 0 8px rgba(0,0,0,.3)}
+
+/* 책장 넘기기 애니메이션 */
+.flip-container{position:absolute;top:0;width:50%;height:100%;transform-style:preserve-3d;pointer-events:none;z-index:5}
+.flip-container.flip-left{right:50%;transform-origin:right center}
+.flip-container.flip-right{left:50%;transform-origin:left center}
+.flip-face{position:absolute;inset:0;backface-visibility:hidden;overflow:hidden}
+.flip-front{background:#fff}
+.flip-back{background:#fff;transform:rotateY(180deg)}
+.flip-container.animating-left{animation:flipLeft .6s cubic-bezier(.645,.045,.355,1) forwards}
+.flip-container.animating-right{animation:flipRight .6s cubic-bezier(.645,.045,.355,1) forwards}
+@keyframes flipLeft{0%{transform:rotateY(0deg)}100%{transform:rotateY(-180deg)}}
+@keyframes flipRight{0%{transform:rotateY(0deg)}100%{transform:rotateY(180deg)}}
+
+/* 좌우 클릭 영역 */
+.nav-area{position:absolute;top:0;width:15%;height:100%;cursor:pointer;z-index:20;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s}
+.nav-area:hover{opacity:1}
+.nav-area-left{left:0;background:linear-gradient(to right,rgba(0,0,0,.3),transparent)}
+.nav-area-right{right:0;background:linear-gradient(to left,rgba(0,0,0,.3),transparent)}
+.nav-arrow{color:#fff;font-size:32px;text-shadow:0 2px 8px rgba(0,0,0,.5)}
+
+/* 단일 페이지 모드 (첫/마지막) */
+.book-page.single{box-shadow:0 20px 80px rgba(0,0,0,.8)}
+
+.viewer-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;color:#888;gap:12px;position:absolute}
+.viewer-spinner{width:40px;height:40px;border:3px solid #333;border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite}
 
 /* Toast */
 .toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--black);color:white;padding:12px 24px;border-radius:100px;font-size:13px;font-weight:600;opacity:0;transition:all .3s;z-index:9999;pointer-events:none;white-space:nowrap}
@@ -457,20 +490,27 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--off
       <div class="viewer-logo-icon"><svg viewBox="0 0 100 90"><use href="#heart"/></svg></div>
       <span class="viewer-logo-text">둘둘치킨 E-Book</span>
     </div>
-    <div class="viewer-page-ctrl">
-      <button id="btnPrev" onclick="changePage(-1)" disabled>◀ 이전</button>
+    <div class="viewer-controls">
+      <button class="vbtn" id="btnPrev" onclick="turnPage(-1)" disabled>◀ 이전</button>
       <span class="viewer-page-num" id="pageNum">- / -</span>
-      <button id="btnNext" onclick="changePage(1)" disabled>다음 ▶</button>
+      <button class="vbtn" id="btnNext" onclick="turnPage(1)" disabled>다음 ▶</button>
+      <button class="vbtn icon" onclick="toggleFullscreen()" title="전체화면">⛶</button>
     </div>
     <div class="viewer-info" id="viewerCustomerName"></div>
   </div>
-  <div class="viewer-body">
+  <div class="viewer-body" id="viewerBody">
     <div class="viewer-loading" id="viewerLoading">
       <div class="viewer-spinner"></div>
-      <span>문서를 불러오는 중...</span>
+      <span style="margin-top:8px;font-size:14px">문서를 불러오는 중...</span>
     </div>
-    <div class="viewer-canvas-wrap" id="canvasWrap" style="display:none">
-      <canvas id="pdfCanvas"></canvas>
+    <div class="book-scene" id="bookScene" style="display:none">
+      <div class="nav-area nav-area-left" onclick="turnPage(-1)"><span class="nav-arrow">‹</span></div>
+      <div class="book-wrap" id="bookWrap">
+        <div class="book-page page-left" id="pageLeft"><canvas id="canvasLeft"></canvas></div>
+        <div class="book-spine"></div>
+        <div class="book-page page-right" id="pageRight"><canvas id="canvasRight"></canvas></div>
+      </div>
+      <div class="nav-area nav-area-right" onclick="turnPage(1)"><span class="nav-arrow">›</span></div>
     </div>
   </div>
 </div>
@@ -782,7 +822,7 @@ window.deleteLink = async function(id){
 };
 
 // ── VIEWER ──
-let pdfDoc=null, currentPage=1, viewerLinkData=null;
+let pdfDoc=null, currentSpread=1, isAnimating=false, viewerNoDownload=false;
 
 async function loadViewer(linkId){
   showPage("viewer");
@@ -790,38 +830,20 @@ async function loadViewer(linkId){
     const snap = await getDoc(doc(db,"links",linkId));
     if(!snap.exists()){showPage("notfound");return}
     const data = snap.data();
-    viewerLinkData = data;
-
-    // 비활성 체크
     if(!data.active){showPage("notfound");return}
-
-    // 만료 체크
-    if(data.expireDate && new Date(data.expireDate)<new Date(new Date().toDateString())){
-      showPage("expired");return
-    }
-
-    // 비밀번호 체크
-    if(data.usePassword){
-      showPage("locked");
-      window._pendingViewerData=data;
-      return;
-    }
-
+    if(data.expireDate && new Date(data.expireDate)<new Date(new Date().toDateString())){showPage("expired");return}
+    if(data.usePassword){showPage("locked");window._pendingViewerData=data;return}
     openPdfViewer(data);
-  } catch(e){
-    console.error(e);
-    showPage("notfound");
-  }
+  } catch(e){console.error(e);showPage("notfound")}
 }
 
 window.checkViewerPassword = function(){
-  const input = document.getElementById("pwInput").value;
-  const data = window._pendingViewerData;
+  const input=document.getElementById("pwInput").value;
+  const data=window._pendingViewerData;
   if(!data) return;
   if(input===data.password){
     document.getElementById("pwError").classList.remove("show");
-    showPage("viewer");
-    openPdfViewer(data);
+    showPage("viewer");openPdfViewer(data);
   } else {
     document.getElementById("pwError").classList.add("show");
     document.getElementById("pwInput").value="";
@@ -829,55 +851,141 @@ window.checkViewerPassword = function(){
 };
 
 function openPdfViewer(data){
-  document.getElementById("viewerCustomerName").textContent = data.customerName||"";
-
-  // 다운로드 금지
+  document.getElementById("viewerCustomerName").textContent=data.customerName||"";
+  viewerNoDownload=data.noDownload;
   if(data.noDownload){
     document.addEventListener("contextmenu",e=>e.preventDefault());
     document.addEventListener("keydown",e=>{
-      if((e.ctrlKey||e.metaKey)&&(e.key==="s"||e.key==="p")){e.preventDefault()}
+      if((e.ctrlKey||e.metaKey)&&["s","p","u"].includes(e.key)){e.preventDefault()}
     });
   }
-
-  pdfjsLib.GlobalWorkerOptions.workerSrc=
-    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-
+  pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
   pdfjsLib.getDocument({url:data.pdfUrl,withCredentials:false}).promise.then(pdf=>{
     pdfDoc=pdf;
-    currentPage=1;
+    currentSpread=1;
     document.getElementById("viewerLoading").style.display="none";
-    document.getElementById("canvasWrap").style.display="";
-    renderPage(currentPage);
+    document.getElementById("bookScene").style.display="flex";
+    renderSpread(currentSpread);
+    setupSwipe();
   }).catch(e=>{
     console.error(e);
-    document.getElementById("viewerLoading").innerHTML="<p style='color:#f66'>문서를 불러올 수 없습니다.</p>";
+    document.getElementById("viewerLoading").innerHTML="<p style='color:#f66;text-align:center'>문서를 불러올 수 없습니다.</p>";
   });
 }
 
-function renderPage(num){
-  pdfDoc.getPage(num).then(page=>{
-    const vp = page.getViewport({scale:Math.min(1.4,(window.innerWidth-60)/page.getViewport({scale:1}).width)});
-    const canvas=document.getElementById("pdfCanvas");
-    canvas.width=vp.width;canvas.height=vp.height;
-    page.render({canvasContext:canvas.getContext("2d"),viewport:vp});
-    document.getElementById("pageNum").textContent=`${num} / ${pdfDoc.numPages}`;
-    document.getElementById("btnPrev").disabled=num<=1;
-    document.getElementById("btnNext").disabled=num>=pdfDoc.numPages;
-  });
+// 스프레드: 1페이지씩 좌우로 표시 (1=표지, 2-3, 4-5 ...)
+// currentSpread = 왼쪽 페이지 번호 (홀수)
+async function renderSpread(spread){
+  const total=pdfDoc.numPages;
+  const leftNum=spread;
+  const rightNum=spread+1;
+  const body=document.getElementById("viewerBody");
+  const availW=body.clientWidth-80;
+  const availH=body.clientHeight-40;
+
+  // 페이지 크기 계산
+  const samplePage=await pdfDoc.getPage(1);
+  const sampleVp=samplePage.getViewport({scale:1});
+  const pageAspect=sampleVp.height/sampleVp.width;
+  let pageW=Math.min(availW/2-8,availH/pageAspect/1);
+  let pageH=pageW*pageAspect;
+  if(pageH>availH){pageH=availH;pageW=pageH/pageAspect}
+  pageW=Math.floor(pageW);pageH=Math.floor(pageH);
+
+  // 왼쪽 페이지
+  const leftEl=document.getElementById("pageLeft");
+  const rightEl=document.getElementById("pageRight");
+  leftEl.style.width=pageW+"px";leftEl.style.height=pageH+"px";
+  rightEl.style.width=pageW+"px";rightEl.style.height=pageH+"px";
+
+  if(leftNum>=1&&leftNum<=total){
+    await renderPageToCanvas(leftNum,"canvasLeft",pageW,pageH);
+    leftEl.style.display="";
+  } else {
+    leftEl.style.display="none";
+  }
+  if(rightNum>=1&&rightNum<=total){
+    await renderPageToCanvas(rightNum,"canvasRight",pageW,pageH);
+    rightEl.style.display="";
+  } else {
+    rightEl.style.display="none";
+  }
+
+  // 페이지 표시
+  const lastPage=Math.min(rightNum,total);
+  const showLeft=Math.max(leftNum,1);
+  document.getElementById("pageNum").textContent=showLeft+(rightNum<=total?" - "+rightNum:"")+" / "+total;
+  document.getElementById("btnPrev").disabled=currentSpread<=1;
+  document.getElementById("btnNext").disabled=rightNum>=total;
 }
 
-window.changePage = function(dir){
-  const next=currentPage+dir;
-  if(next<1||next>pdfDoc?.numPages) return;
-  currentPage=next;
-  renderPage(currentPage);
+async function renderPageToCanvas(num,canvasId,w,h){
+  const page=await pdfDoc.getPage(num);
+  const vp=page.getViewport({scale:1});
+  const scale=Math.min(w/vp.width,h/vp.height);
+  const scaledVp=page.getViewport({scale});
+  const canvas=document.getElementById(canvasId);
+  canvas.width=scaledVp.width;canvas.height=scaledVp.height;
+  await page.render({canvasContext:canvas.getContext("2d"),viewport:scaledVp}).promise;
+}
+
+window.turnPage = async function(dir){
+  if(isAnimating||!pdfDoc) return;
+  const total=pdfDoc.numPages;
+  const nextSpread=currentSpread+(dir>0?2:-2);
+  if(nextSpread<1||nextSpread-1>total) return;
+
+  isAnimating=true;
+
+  // 플립 애니메이션
+  const fc=document.createElement("div");
+  fc.className="flip-container "+(dir>0?"flip-left":"flip-right");
+  const front=document.createElement("div");front.className="flip-face flip-front";
+  const back=document.createElement("div");back.className="flip-face flip-back";
+  const body=document.getElementById("viewerBody");
+  const bw=document.getElementById("bookWrap");
+  const rect=bw.getBoundingClientRect();
+  fc.style.cssText=`position:fixed;top:${rect.top}px;width:${rect.width/2}px;height:${rect.height}px;transform-style:preserve-3d;`;
+  if(dir>0){fc.style.left=(rect.left+rect.width/2)+"px";fc.style.transformOrigin="left center";}
+  else{fc.style.left=rect.left+"px";fc.style.transformOrigin="right center";}
+  fc.appendChild(front);fc.appendChild(back);
+  document.body.appendChild(fc);
+
+  // 페이지 넘기기 후 실제 렌더
+  currentSpread=nextSpread<1?1:nextSpread;
+  setTimeout(async()=>{
+    fc.classList.add(dir>0?"animating-left":"animating-right");
+    await renderSpread(currentSpread);
+    setTimeout(()=>{fc.remove();isAnimating=false;},650);
+  },20);
 };
+
+function setupSwipe(){
+  let startX=0;
+  const el=document.getElementById("bookScene");
+  el.addEventListener("touchstart",e=>{startX=e.touches[0].clientX},{passive:true});
+  el.addEventListener("touchend",e=>{
+    const dx=e.changedTouches[0].clientX-startX;
+    if(Math.abs(dx)>50) window.turnPage(dx<0?1:-1);
+  },{passive:true});
+}
+
+window.toggleFullscreen=function(){
+  if(!document.fullscreenElement) document.getElementById("page-viewer").requestFullscreen?.();
+  else document.exitFullscreen?.();
+};
+
+// 키보드
+document.addEventListener("keydown",e=>{
+  if(!document.getElementById("page-viewer").classList.contains("active")) return;
+  if(e.key==="ArrowRight"||e.key==="ArrowDown") window.turnPage(1);
+  if(e.key==="ArrowLeft"||e.key==="ArrowUp") window.turnPage(-1);
+});
 
 // ── UTILS ──
 function generateId(){
   return Math.random().toString(36).slice(2,8)+Math.random().toString(36).slice(2,8);
 }
-
 window._lastGeneratedUrl="";
 </script>
 

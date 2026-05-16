@@ -5,6 +5,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>둘둘치킨 E-Book</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='white'/%3E%3Cpath d='M50 85 C50 85 5 55 5 28 C5 13 17 3 30 3 C38 3 45 7 50 14 C55 7 62 3 70 3 C83 3 95 13 95 28 C95 55 50 85 50 85Z' fill='%23E8001D'/%3E%3C/svg%3E"/>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet"/>
 <style>
 :root {
@@ -229,7 +230,7 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--off
 .viewer-page-num{font-size:12px;color:#aaa;min-width:80px;text-align:center}
 
 /* 책 컨테이너 */
-.viewer-body{flex:1;overflow:hidden;display:flex;justify-content:center;align-items:center;padding:24px;position:relative}
+.viewer-body{flex:1;overflow:hidden;display:flex;justify-content:center;align-items:center;padding:24px 80px;position:relative}
 .book-scene{perspective:2000px;display:flex;align-items:center;justify-content:center}
 .book-wrap{display:flex;align-items:stretch;position:relative;box-shadow:0 20px 80px rgba(0,0,0,.8);border-radius:2px}
 
@@ -271,6 +272,20 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--off
 .nav-btn-float:disabled{opacity:.2;cursor:not-allowed}
 .nav-left{left:12px}
 .nav-right{right:12px}
+
+/* 책장 넘기기 */
+.flip-to-left{animation:flipLeft .5s cubic-bezier(.645,.045,.355,1) forwards}
+.flip-to-right{animation:flipRight .5s cubic-bezier(.645,.045,.355,1) forwards}
+@keyframes flipLeft{
+  0%{transform:rotateY(0deg);box-shadow:0 0 20px rgba(0,0,0,.3)}
+  50%{box-shadow:-10px 0 30px rgba(0,0,0,.4)}
+  100%{transform:rotateY(-180deg)}
+}
+@keyframes flipRight{
+  0%{transform:rotateY(0deg);box-shadow:0 0 20px rgba(0,0,0,.3)}
+  50%{box-shadow:10px 0 30px rgba(0,0,0,.4)}
+  100%{transform:rotateY(180deg)}
+}
 
 /* turn.js 책 스타일 */
 #flipbook{box-shadow:0 30px 80px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.05)}
@@ -517,9 +532,19 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--off
       <div class="viewer-spinner"></div>
       <span style="margin-top:8px;font-size:14px;color:#ccc">문서를 불러오는 중...</span>
     </div>
-    <div id="bookScene" style="display:none;width:100%;height:100%;position:relative;display:none;align-items:center;justify-content:center">
+    <div id="bookScene" style="display:none;width:100%;height:100%;position:relative;flex-direction:row;align-items:center;justify-content:center">
       <button class="nav-btn-float nav-left" onclick="turnPage(-1)">&#8249;</button>
-      <div id="flipbook"></div>
+      <div id="flipbook" style="position:relative;overflow:hidden">
+        <div style="display:flex">
+          <canvas id="canvasL" style="display:block;border-right:2px solid #e0d0c0;box-shadow:inset -6px 0 18px rgba(0,0,0,.15)"></canvas>
+          <canvas id="canvasR" style="display:block;box-shadow:inset 6px 0 18px rgba(0,0,0,.1)"></canvas>
+        </div>
+        <!-- 책장 넘기기 오버레이 -->
+        <div id="flipDiv" style="display:none;position:absolute;top:0;width:50%;height:100%;transform-style:preserve-3d;z-index:10">
+          <canvas id="flipFront" style="position:absolute;top:0;left:0;backface-visibility:hidden;display:block"></canvas>
+          <canvas id="flipBack" style="position:absolute;top:0;left:0;backface-visibility:hidden;transform:rotateY(180deg);display:block"></canvas>
+        </div>
+      </div>
       <button class="nav-btn-float nav-right" onclick="turnPage(1)">&#8250;</button>
     </div>
   </div>
@@ -530,9 +555,7 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--off
 
 <!-- PDF.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<!-- jQuery + turn.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/turn.js/3/turn.min.js"></script>
+
 
 <!-- Firebase -->
 <script type="module">
@@ -835,7 +858,7 @@ window.deleteLink = async function(id){
 };
 
 // ── VIEWER ──
-let pdfDoc=null, totalPages=0, viewerNoDownload=false, flipReady=false;
+let pdfDoc=null, totalPages=0, viewerNoDownload=false, currentPage=1, pageW=0, pageH=0, isFlipping=false;
 
 async function loadViewer(linkId){
   showPage("viewer");
@@ -878,7 +901,7 @@ function openPdfViewer(data){
     totalPages=pdf.numPages;
     await buildFlipbook();
     document.getElementById("viewerLoading").style.display="none";
-    document.getElementById("bookScene").style.display="flex";
+    const bs=document.getElementById("bookScene");bs.style.display="flex";
     updatePageNum();
   }).catch(e=>{
     console.error(e);
@@ -888,85 +911,106 @@ function openPdfViewer(data){
 
 async function buildFlipbook(){
   const body=document.getElementById("viewerBody");
-  const availW=body.clientWidth-140;
+  const availW=body.clientWidth-160;
   const availH=body.clientHeight-40;
 
-  // 페이지 크기 계산
   const sample=await pdfDoc.getPage(1);
   const sv=sample.getViewport({scale:1});
   let pH=Math.min(availH, availW/2/sv.width*sv.height);
   let pW=pH/sv.height*sv.width;
   if(pW*2>availW){pW=availW/2;pH=pW/sv.width*sv.height}
-  pW=Math.floor(pW);pH=Math.floor(pH);
+  pageW=Math.floor(pW);pageH=Math.floor(pH);
 
   const fb=document.getElementById("flipbook");
-  fb.innerHTML="";
-  fb.style.width=(pW*2)+"px";
-  fb.style.height=pH+"px";
+  fb.style.width=(pageW*2)+"px";
+  fb.style.height=pageH+"px";
+  fb.style.position="relative";
+  fb.style.boxShadow="0 30px 80px rgba(0,0,0,.8)";
 
-  // 모든 페이지 캔버스 생성
-  for(let i=1;i<=totalPages;i++){
-    const pageDiv=document.createElement("div");
-    pageDiv.className="page";
-    pageDiv.style.width=pW+"px";
-    pageDiv.style.height=pH+"px";
+  // 좌/우 페이지 캔버스
+  const left=document.getElementById("canvasL");
+  const right=document.getElementById("canvasR");
+  const flipDiv=document.getElementById("flipDiv");
+  const flipFront=document.getElementById("flipFront");
+  const flipBack=document.getElementById("flipBack");
 
-    const shadowL=document.createElement("div");shadowL.className="page-shadow-left";
-    const shadowR=document.createElement("div");shadowR.className="page-shadow-right";
-    const canvas=document.createElement("canvas");
+  left.width=pageW;left.height=pageH;
+  right.width=pageW;right.height=pageH;
+  flipDiv.style.width=pageW+"px";flipDiv.style.height=pageH+"px";
 
-    pageDiv.appendChild(canvas);
-    pageDiv.appendChild(shadowL);
-    pageDiv.appendChild(shadowR);
-    fb.appendChild(pageDiv);
-
-    // 비동기 렌더
-    renderPageToCanvas(i,canvas,pW,pH);
-  }
-
-  // turn.js 초기화
-  $(fb).turn({
-    width: pW*2,
-    height: pH,
-    autoCenter: true,
-    gradients: true,
-    acceleration: true,
-    elevation: 50,
-    when:{
-      turned: function(e,page){
-        updatePageNum();
-      }
-    }
-  });
-  flipReady=true;
+  currentPage=1;
+  await renderSpreadNow(currentPage);
+  updatePageNum2();
 }
 
-async function renderPageToCanvas(num,canvas,w,h){
-  try {
+async function renderPageOnCanvas(num,canvas){
+  if(num<1||num>totalPages){canvas.getContext("2d").clearRect(0,0,canvas.width,canvas.height);return}
+  try{
     const page=await pdfDoc.getPage(num);
     const vp=page.getViewport({scale:1});
-    const scale=Math.min(w/vp.width,h/vp.height);
+    const scale=Math.min(pageW/vp.width,pageH/vp.height);
     const sv=page.getViewport({scale});
     canvas.width=sv.width;canvas.height=sv.height;
     await page.render({canvasContext:canvas.getContext("2d"),viewport:sv}).promise;
-  } catch(e){console.error("페이지 렌더 오류",num,e)}
+  }catch(e){console.error(e)}
 }
 
-function updatePageNum(){
-  if(!flipReady) return;
-  const fb=$("#flipbook");
-  const cur=fb.turn("page");
-  const total=fb.turn("pages");
-  document.getElementById("pageNum").textContent=cur+" / "+total;
-  document.getElementById("btnPrev").disabled=cur<=1;
-  document.getElementById("btnNext").disabled=cur>=total;
+async function renderSpreadNow(left){
+  const cL=document.getElementById("canvasL");
+  const cR=document.getElementById("canvasR");
+  await Promise.all([renderPageOnCanvas(left,cL),renderPageOnCanvas(left+1,cR)]);
 }
 
-window.turnPage=function(dir){
-  if(!flipReady) return;
-  const fb=$("#flipbook");
-  if(dir>0) fb.turn("next");
-  else fb.turn("previous");
+function updatePageNum2(){
+  const right=Math.min(currentPage+1,totalPages);
+  document.getElementById("pageNum").textContent=currentPage+(right>currentPage?" - "+right:"")+" / "+totalPages;
+  document.getElementById("btnPrev").disabled=currentPage<=1;
+  document.getElementById("btnNext").disabled=currentPage+1>=totalPages;
+}
+
+window.turnPage=async function(dir){
+  if(isFlipping||!pdfDoc) return;
+  const next=currentPage+(dir>0?2:-2);
+  if(next<1||next>totalPages) return;
+  isFlipping=true;
+
+  const cL=document.getElementById("canvasL");
+  const cR=document.getElementById("canvasR");
+  const flipDiv=document.getElementById("flipDiv");
+  const flipFront=document.getElementById("flipFront");
+  const flipBack=document.getElementById("flipBack");
+
+  // 앞면 = 현재 페이지, 뒷면 = 다음 페이지
+  if(dir>0){
+    // 오른쪽→왼쪽 (다음)
+    flipFront.width=pageW;flipFront.height=pageH;
+    flipBack.width=pageW;flipBack.height=pageH;
+    await renderPageOnCanvas(currentPage+1,flipFront);
+    await renderPageOnCanvas(next+1,flipBack);
+    flipDiv.style.right="0";flipDiv.style.left="auto";
+    flipDiv.style.transformOrigin="left center";
+    flipDiv.classList.remove("flip-to-right");
+    flipDiv.classList.add("flip-to-left");
+  } else {
+    flipFront.width=pageW;flipFront.height=pageH;
+    flipBack.width=pageW;flipBack.height=pageH;
+    await renderPageOnCanvas(currentPage,flipFront);
+    await renderPageOnCanvas(next+1,flipBack);
+    flipDiv.style.left="0";flipDiv.style.right="auto";
+    flipDiv.style.transformOrigin="right center";
+    flipDiv.classList.remove("flip-to-left");
+    flipDiv.classList.add("flip-to-right");
+  }
+  flipDiv.style.display="block";
+
+  setTimeout(async()=>{
+    currentPage=next;
+    await renderSpreadNow(currentPage);
+    flipDiv.style.display="none";
+    flipDiv.classList.remove("flip-to-left","flip-to-right");
+    updatePageNum2();
+    isFlipping=false;
+  },550);
 };
 
 window.toggleFullscreen=function(){

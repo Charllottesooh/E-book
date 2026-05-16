@@ -6,6 +6,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>둘둘치킨 E-Book</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='white'/%3E%3Cpath d='M50 85 C50 85 5 55 5 28 C5 13 17 3 30 3 C38 3 45 7 50 14 C55 7 62 3 70 3 C83 3 95 13 95 28 C95 55 50 85 50 85Z' fill='%23E8001D'/%3E%3C/svg%3E"/>
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAAACXBIWXMAAAsTAAALEwEAmpwYAAAF8WlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNi4wLWMwMDYgNzkuMTY0NzUzLCAyMDIxLzAyLzE1LTExOjUyOjEzICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIiB4bWxuczpzdEV2dD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlRXZlbnQjIiB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iIHhtbG5zOnBob3Rvc2hvcD0iaHR0cDovL25zLmFkb2JlLmNvbS9waG90b3Nob3AvMS4wLyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgMjIuMyAoTWFjaW50b3NoKSIgeG1wOkNyZWF0ZURhdGU9IjIwMjEtMDUtMjFUMTM6MzI6NDkrMDk6MDAiIHhtcDpNZXRhZGF0YURhdGU9IjIwMjEtMDUtMjFUMTM6MzI6NDkrMDk6MDAiIHhtcDpNb2RpZnlEYXRlPSIyMDIxLTA1LTIxVDEzOjMyOjQ5KzA5OjAwIj4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz4B//79AAAB/UlEQVR4nO3BMQEAAADCoPVP7WsIoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeAMBuAABHgAAAABJRU5ErkJggg=="/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="둘둘E-Book"/>
+<meta name="theme-color" content="#E8001D"/>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet"/>
 <style>
 :root {
@@ -274,8 +279,8 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--off
 .nav-right{right:12px}
 
 /* 책장 넘기기 */
-.flip-to-left{animation:flipLeft .5s cubic-bezier(.645,.045,.355,1) forwards}
-.flip-to-right{animation:flipRight .5s cubic-bezier(.645,.045,.355,1) forwards}
+.flip-to-left{animation:flipLeft .35s cubic-bezier(.4,0,.2,1) forwards}
+.flip-to-right{animation:flipRight .35s cubic-bezier(.4,0,.2,1) forwards}
 @keyframes flipLeft{
   0%{transform:rotateY(0deg);box-shadow:0 0 20px rgba(0,0,0,.3)}
   50%{box-shadow:-10px 0 30px rgba(0,0,0,.4)}
@@ -310,6 +315,21 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--off
   .topnav{padding:0 16px}
   .topnav-title{display:none}
   .user-info{display:none}
+}
+
+/* ── 모바일 뷰어 최적화 ── */
+@media(max-width:768px){
+  .viewer-topbar{height:48px;padding:0 10px}
+  .viewer-logo-text{display:none}
+  .vbtn{padding:5px 10px;font-size:11px}
+  .viewer-page-num{font-size:11px;min-width:60px}
+  .viewer-info{display:none}
+  .nav-btn-float{width:40px;height:60px;font-size:32px}
+  .nav-left{left:4px}
+  .nav-right{right:4px}
+  /* 모바일: 단일 페이지 모드 */
+  #flipbook canvas#canvasR{display:none}
+  #flipDiv canvas#flipBack{display:none}
 }
 </style>
 </head>
@@ -910,20 +930,23 @@ function openPdfViewer(data){
 }
 
 async function buildFlipbook(){
+  const isMobile=window.innerWidth<=768;
   const body=document.getElementById("viewerBody");
-  const availW=body.clientWidth-160;
+  const availW=body.clientWidth-(isMobile?20:160);
   const availH=body.clientHeight-40;
 
   const sample=await pdfDoc.getPage(1);
   const sv=sample.getViewport({scale:1});
-  let pH=Math.min(availH, availW/2/sv.width*sv.height);
+  const divisor=isMobile?1:2;
+  let pH=Math.min(availH, availW/divisor/sv.width*sv.height);
   let pW=pH/sv.height*sv.width;
-  if(pW*2>availW){pW=availW/2;pH=pW/sv.width*sv.height}
+  if(pW*divisor>availW){pW=availW/divisor;pH=pW/sv.width*sv.height}
   pageW=Math.floor(pW);pageH=Math.floor(pH);
 
   const fb=document.getElementById("flipbook");
-  fb.style.width=(pageW*2)+"px";
+  fb.style.width=(isMobile?pageW:pageW*2)+"px";
   fb.style.height=pageH+"px";
+  window._isMobile=isMobile;
   fb.style.position="relative";
   fb.style.boxShadow="0 30px 80px rgba(0,0,0,.8)";
 
@@ -958,19 +981,27 @@ async function renderPageOnCanvas(num,canvas){
 async function renderSpreadNow(left){
   const cL=document.getElementById("canvasL");
   const cR=document.getElementById("canvasR");
-  await Promise.all([renderPageOnCanvas(left,cL),renderPageOnCanvas(left+1,cR)]);
+  if(window._isMobile){
+    cR.style.display="none";
+    await renderPageOnCanvas(left,cL);
+  } else {
+    cR.style.display="block";
+    await Promise.all([renderPageOnCanvas(left,cL),renderPageOnCanvas(left+1,cR)]);
+  }
 }
 
 function updatePageNum2(){
+  const isMob=window._isMobile;
   const right=Math.min(currentPage+1,totalPages);
-  document.getElementById("pageNum").textContent=currentPage+(right>currentPage?" - "+right:"")+" / "+totalPages;
+  document.getElementById("pageNum").textContent=isMob?currentPage+" / "+totalPages:currentPage+(right>currentPage?" - "+right:"")+" / "+totalPages;
   document.getElementById("btnPrev").disabled=currentPage<=1;
-  document.getElementById("btnNext").disabled=currentPage+1>=totalPages;
+  document.getElementById("btnNext").disabled=isMob?currentPage>=totalPages:currentPage+1>=totalPages;
 }
 
 window.turnPage=async function(dir){
   if(isFlipping||!pdfDoc) return;
-  const next=currentPage+(dir>0?2:-2);
+  const step=window._isMobile?1:2;
+  const next=currentPage+(dir>0?step:-step);
   if(next<1||next>totalPages) return;
   isFlipping=true;
 
@@ -1010,7 +1041,7 @@ window.turnPage=async function(dir){
     flipDiv.classList.remove("flip-to-left","flip-to-right");
     updatePageNum2();
     isFlipping=false;
-  },550);
+  },380);
 };
 
 window.toggleFullscreen=function(){
@@ -1024,6 +1055,20 @@ document.addEventListener("keydown",e=>{
   if(e.key==="ArrowRight"||e.key==="ArrowDown") window.turnPage(1);
   if(e.key==="ArrowLeft"||e.key==="ArrowUp") window.turnPage(-1);
 });
+
+// 터치 스와이프
+(function(){
+  let tx=0,ty=0;
+  document.addEventListener("touchstart",e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY},{passive:true});
+  document.addEventListener("touchend",e=>{
+    if(!document.getElementById("page-viewer").classList.contains("active")) return;
+    const dx=e.changedTouches[0].clientX-tx;
+    const dy=e.changedTouches[0].clientY-ty;
+    if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>40){
+      window.turnPage(dx<0?1:-1);
+    }
+  },{passive:true});
+})();
 
 // ── UTILS ──
 function generateId(){

@@ -1037,24 +1037,24 @@ function downloadExcel(){
   const stats=window._stats||{};
   if(!links.length){showToast("다운로드할 데이터가 없습니다.");return}
 
-  // BOM + CSV (엑셀 한글 깨짐 방지)
   const BOM="﻿";
   const headers=["고객명","파일명","열람여부","최초열람일시","마지막열람일시","열람횟수","마지막페이지","전체페이지","열람진행률","접속기기","링크주소","단축주소","발송일자","만료일자","링크상태"];
+
   const rows=links.map(l=>{
     const s=stats[l.id]||{};
-    const viewed=!!s.firstViewAt?"열람":"미열람";
+    const viewed=s.firstViewAt?"열람":"미열람";
     const pct=l.totalPages&&s.lastPage?Math.round(s.lastPage/l.totalPages*100)+"%":"-";
     const device=s.device==="mobile"?"모바일":s.device==="desktop"?"PC":"-";
     const active=l.active&&!(l.expireDate&&new Date(l.expireDate)<new Date())?"활성":"비활성";
-    return [
+    const vals=[
       l.customerName||"",
       l.fileName||"",
       viewed,
       s.firstViewAt?fmtDate(s.firstViewAt):"-",
       s.lastViewAt?fmtDate(s.lastViewAt):"-",
       (s.viewCount||0)+"회",
-      s.lastPage||0,
-      l.totalPages||"-",
+      String(s.lastPage||0),
+      String(l.totalPages||"-"),
       pct,
       device,
       l.viewerUrl||"",
@@ -1062,17 +1062,17 @@ function downloadExcel(){
       l.sendDate||"",
       l.expireDate||"무제한",
       active,
-    ].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",");
+    ];
+    return vals.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",");
   });
 
-  const csv=BOM+headers.map(h=>`"${h}"`).join(",")+"
-"+rows.join("
-");
+  const headerRow=headers.map(h=>'"'+h+'"').join(",");
+  const csv=BOM+headerRow+"\n"+rows.join("\n");
   const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a");
   a.href=url;
-  a.download=`둘둘치킨_열람통계_${today()}.csv`;
+  a.download="둘둘치킨_열람통계_"+today()+".csv";
   a.click();
   URL.revokeObjectURL(url);
   showToast("📥 엑셀 파일 다운로드 완료!");

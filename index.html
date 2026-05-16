@@ -929,7 +929,7 @@ function openPdfViewer(data){
     await buildFlipbook();
     document.getElementById("viewerLoading").style.display="none";
     const bs=document.getElementById("bookScene");bs.style.display="flex";
-    updatePageNum();
+    updatePageNum2();
   }).catch(e=>{
     console.error(e);
     document.getElementById("viewerLoading").innerHTML="<p style='color:#f88;text-align:center;padding:20px'>문서를 불러올 수 없습니다.</p>";

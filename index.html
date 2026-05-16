@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>둘둘치킨 E-Book</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --red:#E8001D; --red-dark:#B0001A; --red-light:#FF3347;
+  --white:#FFFFFF; --off-white:#FFF8F8; --gray-50:#FDF5F5;
+  --gray-100:#F5E8E8; --gray-200:#E8D0D0; --gray-400:#B08080;
+  --gray-600:#6B4040; --gray-800:#2D1A1A; --black:#1A0A0A;
+  --shadow-sm:0 2px 8px rgba(232,0,29,.08);
+  --shadow-md:0 8px 32px rgba(232,0,29,.15);
+  --shadow-lg:0 24px 64px rgba(232,0,29,.20);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--off-white);color:var(--black);overflow-x:hidden}
+
+/* PAGE ROUTER */
+.page{display:none;min-height:100vh}
+.page.active{display:flex}
+
+/* ── HEART ── */
+.heart-icon svg{fill:var(--red)}
+
+/* ════ LOGIN ════ */
+#page-login{align-items:center;justify-content:center;background:var(--off-white);position:relative;overflow:hidden}
+#page-login::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 20% 20%,rgba(232,0,29,.06) 0%,transparent 50%),radial-gradient(circle at 80% 80%,rgba(232,0,29,.04) 0%,transparent 50%);pointer-events:none}
+.bg-hearts{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.bg-heart{position:absolute;opacity:.04;animation:floatUp linear infinite}
+.bg-heart svg{fill:var(--red)}
+@keyframes floatUp{0%{transform:translateY(110vh) rotate(0deg);opacity:0}10%{opacity:.06}90%{opacity:.06}100%{transform:translateY(-10vh) rotate(360deg);opacity:0}}
+.login-card{position:relative;background:var(--white);border-radius:24px;padding:52px 48px 48px;width:100%;max-width:420px;box-shadow:var(--shadow-lg);animation:slideUp .6s cubic-bezier(.16,1,.3,1) both}
+@keyframes slideUp{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
+.logo-wrap{display:flex;flex-direction:column;align-items:center;margin-bottom:36px}
+.logo-icon{width:72px;height:72px;background:var(--white);border:1px solid var(--red);border-radius:16px;display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.logo-icon svg{width:46px;height:46px;fill:var(--red)}
+.logo-title{font-weight:900;font-size:20px;color:var(--black);letter-spacing:-.5px;text-align:center}
+.logo-title span{color:var(--red)}
+.logo-sub{margin-top:4px;font-size:12px;color:var(--gray-400);letter-spacing:.5px}
+.login-divider{width:40px;height:3px;background:var(--red);border-radius:2px;margin:0 auto 32px}
+.form-group{margin-bottom:18px}
+.form-label{display:block;font-size:12px;font-weight:700;color:var(--gray-600);margin-bottom:8px}
+.form-input{width:100%;padding:14px 16px;border:2px solid var(--gray-200);border-radius:12px;font-size:15px;font-family:'Noto Sans KR',sans-serif;color:var(--black);background:var(--gray-50);transition:border-color .2s,box-shadow .2s,background .2s;outline:none}
+.form-input:focus{border-color:var(--red);background:var(--white);box-shadow:0 0 0 4px rgba(232,0,29,.08)}
+.form-input::placeholder{color:var(--gray-400)}
+.btn-login{width:100%;padding:15px;background:var(--red);color:var(--white);border:none;border-radius:12px;font-size:16px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;margin-top:8px;transition:background .2s,transform .15s,box-shadow .2s;box-shadow:0 4px 16px rgba(232,0,29,.30)}
+.btn-login:hover{background:var(--red-dark);transform:translateY(-1px);box-shadow:0 8px 24px rgba(232,0,29,.40)}
+.btn-login:disabled{background:var(--gray-200);color:var(--gray-400);box-shadow:none;cursor:not-allowed;transform:none}
+.login-error{display:none;margin-top:14px;padding:12px 16px;background:rgba(232,0,29,.07);border:1px solid rgba(232,0,29,.20);border-radius:10px;font-size:13px;color:var(--red-dark);text-align:center;font-weight:500}
+.login-error.show{display:block;animation:shake .4s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.spinner{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.4);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.login-footer{margin-top:28px;text-align:center;font-size:12px;color:var(--gray-400)}
+
+/* ════ DASHBOARD LAYOUT ════ */
+#page-dashboard{flex-direction:column;background:var(--gray-50)}
+.topnav{background:var(--white);border-bottom:2px solid var(--gray-100);padding:0 32px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--shadow-sm)}
+.topnav-logo{display:flex;align-items:center;gap:12px}
+.topnav-icon{width:38px;height:38px;background:var(--white);border:1px solid var(--red);border-radius:9px;display:flex;align-items:center;justify-content:center}
+.topnav-icon svg{width:24px;height:24px;fill:var(--red)}
+.topnav-title{font-weight:900;font-size:17px;color:var(--black);letter-spacing:-.3px}
+.topnav-right{display:flex;align-items:center;gap:16px}
+.badge-role{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.3px}
+.badge-role.super{background:rgba(232,0,29,.10);color:var(--red)}
+.badge-role.staff{background:var(--gray-100);color:var(--gray-600)}
+.user-info{font-size:13px;color:var(--gray-600);font-weight:500}
+.btn-logout{padding:7px 16px;border:2px solid var(--gray-200);border-radius:8px;background:none;font-size:13px;font-family:'Noto Sans KR',sans-serif;color:var(--gray-600);cursor:pointer;font-weight:500;transition:border-color .2s,color .2s}
+.btn-logout:hover{border-color:var(--red);color:var(--red)}
+
+/* ── DASHBOARD BODY ── */
+.dash-container{flex:1;display:grid;grid-template-columns:360px 1fr;gap:0;overflow:hidden;max-height:calc(100vh - 64px)}
+
+/* LEFT: 업로드 패널 */
+.upload-panel{background:var(--white);border-right:2px solid var(--gray-100);overflow-y:auto;padding:28px 24px}
+.panel-title{font-size:16px;font-weight:900;color:var(--black);margin-bottom:20px;display:flex;align-items:center;gap:8px}
+.panel-title::before{content:'';display:inline-block;width:4px;height:18px;background:var(--red);border-radius:2px}
+
+/* Drop zone */
+.drop-zone{border:2px dashed var(--gray-200);border-radius:16px;padding:32px 20px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:20px;position:relative}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--red);background:rgba(232,0,29,.03)}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop-icon{font-size:36px;margin-bottom:10px}
+.drop-text{font-size:14px;font-weight:700;color:var(--gray-600);margin-bottom:4px}
+.drop-sub{font-size:12px;color:var(--gray-400)}
+.file-selected{display:none;align-items:center;gap:10px;padding:12px 14px;background:var(--gray-50);border-radius:10px;margin-bottom:16px}
+.file-selected.show{display:flex}
+.file-selected-icon{font-size:22px}
+.file-selected-name{font-size:13px;font-weight:700;color:var(--black);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-selected-size{font-size:11px;color:var(--gray-400)}
+.file-remove{background:none;border:none;color:var(--gray-400);cursor:pointer;font-size:16px;padding:2px}
+.file-remove:hover{color:var(--red)}
+
+/* Upload progress */
+.upload-progress{display:none;margin-bottom:16px}
+.upload-progress.show{display:block}
+.progress-bar-wrap{height:6px;background:var(--gray-100);border-radius:3px;overflow:hidden;margin-bottom:6px}
+.progress-bar{height:100%;background:var(--red);border-radius:3px;transition:width .3s;width:0%}
+.progress-text{font-size:12px;color:var(--gray-600);font-weight:500}
+
+/* Settings */
+.setting-group{margin-bottom:16px}
+.setting-label{font-size:12px;font-weight:700;color:var(--gray-600);margin-bottom:8px;display:block}
+.setting-input{width:100%;padding:11px 14px;border:2px solid var(--gray-200);border-radius:10px;font-size:14px;font-family:'Noto Sans KR',sans-serif;color:var(--black);background:var(--gray-50);outline:none;transition:border-color .2s,box-shadow .2s}
+.setting-input:focus{border-color:var(--red);background:var(--white);box-shadow:0 0 0 3px rgba(232,0,29,.08)}
+.setting-input::placeholder{color:var(--gray-400)}
+
+/* Toggle switches */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--gray-50);border-radius:10px;margin-bottom:8px;border:1px solid var(--gray-100)}
+.toggle-info{flex:1}
+.toggle-name{font-size:13px;font-weight:700;color:var(--black)}
+.toggle-desc{font-size:11px;color:var(--gray-400);margin-top:2px}
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:var(--gray-200);border-radius:12px;cursor:pointer;transition:background .2s}
+.toggle-slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:white;border-radius:50%;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.toggle input:checked+.toggle-slider{background:var(--red)}
+.toggle input:checked+.toggle-slider::before{transform:translateX(20px)}
+
+/* Password sub-field */
+.pw-field{display:none;margin-top:8px}
+.pw-field.show{display:block}
+
+/* Date picker row */
+.date-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* Generate button */
+.btn-generate{width:100%;padding:15px;background:var(--red);color:var(--white);border:none;border-radius:12px;font-size:15px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:background .2s,transform .15s,box-shadow .2s;box-shadow:0 4px 16px rgba(232,0,29,.30);margin-top:8px}
+.btn-generate:hover{background:var(--red-dark);transform:translateY(-1px)}
+.btn-generate:disabled{background:var(--gray-200);color:var(--gray-400);box-shadow:none;cursor:not-allowed;transform:none}
+
+/* Generated link box */
+.link-result{display:none;margin-top:16px;padding:16px;background:rgba(232,0,29,.05);border:1px solid rgba(232,0,29,.20);border-radius:12px}
+.link-result.show{display:block}
+.link-result-label{font-size:11px;font-weight:700;color:var(--red);margin-bottom:8px;letter-spacing:.3px}
+.link-result-url{font-size:12px;color:var(--black);word-break:break-all;background:var(--white);padding:10px 12px;border-radius:8px;border:1px solid var(--gray-200);margin-bottom:10px;font-weight:500}
+.btn-copy{width:100%;padding:9px;background:var(--red);color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:background .2s}
+.btn-copy:hover{background:var(--red-dark)}
+
+/* RIGHT: 링크 목록 */
+.list-panel{overflow-y:auto;padding:28px}
+.list-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.list-stats{display:flex;gap:12px}
+.stat-chip{padding:6px 14px;background:var(--white);border:1px solid var(--gray-200);border-radius:20px;font-size:12px;font-weight:700;color:var(--gray-600)}
+.stat-chip span{color:var(--red)}
+
+/* Search */
+.list-search{width:220px;padding:9px 14px;border:2px solid var(--gray-200);border-radius:10px;font-size:13px;font-family:'Noto Sans KR',sans-serif;outline:none;transition:border-color .2s}
+.list-search:focus{border-color:var(--red)}
+
+/* Link cards */
+.link-cards{display:flex;flex-direction:column;gap:12px}
+.link-card{background:var(--white);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow-sm);border:1px solid var(--gray-100);transition:box-shadow .2s,transform .2s;animation:cardIn .3s ease both}
+@keyframes cardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.link-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.link-card.inactive{opacity:.55}
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
+.card-customer{font-size:15px;font-weight:900;color:var(--black)}
+.card-file{font-size:12px;color:var(--gray-400);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px}
+.card-badges{display:flex;gap:6px;flex-wrap:wrap}
+.badge{padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.2px}
+.badge-active{background:rgba(0,180,60,.12);color:#006428}
+.badge-inactive{background:var(--gray-100);color:var(--gray-600)}
+.badge-pw{background:rgba(232,0,29,.10);color:var(--red)}
+.badge-nodl{background:rgba(255,140,0,.12);color:#8B4500}
+.badge-expired-tag{background:var(--gray-100);color:var(--gray-600)}
+.card-mid{display:flex;gap:16px;margin-bottom:12px}
+.card-meta{font-size:11px;color:var(--gray-400)}
+.card-meta strong{color:var(--gray-600);font-weight:600}
+.card-url-row{display:flex;align-items:center;gap:8px;background:var(--gray-50);border-radius:8px;padding:8px 12px;border:1px solid var(--gray-100)}
+.card-url{font-size:11px;color:var(--gray-600);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card-actions{display:flex;gap:6px}
+.btn-card{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;border:1px solid var(--gray-200);background:var(--white);color:var(--gray-600);transition:all .15s}
+.btn-card:hover{border-color:var(--red);color:var(--red)}
+.btn-card.copy{background:var(--red);color:white;border-color:var(--red)}
+.btn-card.copy:hover{background:var(--red-dark)}
+.btn-card.danger:hover{border-color:#cc0000;color:#cc0000}
+
+/* Empty state */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 24px;text-align:center;color:var(--gray-400)}
+.empty-state .empty-icon{font-size:48px;margin-bottom:16px;opacity:.5}
+.empty-state p{font-size:14px}
+
+/* ════ ERROR PAGES ════ */
+.error-page{flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:32px;text-align:center;position:relative;overflow:hidden}
+.error-page::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 40%,rgba(232,0,29,.05) 0%,transparent 60%);pointer-events:none}
+.error-card{background:var(--white);border-radius:28px;padding:56px 48px;max-width:440px;width:100%;box-shadow:var(--shadow-lg);animation:slideUp .5s cubic-bezier(.16,1,.3,1) both;position:relative}
+.error-icon-wrap{width:96px;height:96px;margin:0 auto 24px;border-radius:24px;display:flex;align-items:center;justify-content:center;font-size:48px}
+.error-icon-wrap.expired{background:rgba(232,0,29,.07);border:2px solid rgba(232,0,29,.15)}
+.error-icon-wrap.notfound{background:rgba(107,64,64,.07);border:2px solid rgba(107,64,64,.15)}
+.error-icon-wrap.locked{background:rgba(232,0,29,.07);border:2px solid rgba(232,0,29,.15)}
+.error-tag{display:inline-block;padding:4px 14px;border-radius:100px;font-size:11px;font-weight:700;letter-spacing:1px;margin-bottom:16px}
+.error-tag.red{background:rgba(232,0,29,.10);color:var(--red)}
+.error-tag.gray{background:var(--gray-100);color:var(--gray-600)}
+.error-title{font-size:24px;font-weight:900;color:var(--black);margin-bottom:12px;letter-spacing:-.5px;line-height:1.3}
+.error-desc{font-size:14px;color:var(--gray-400);line-height:1.8;margin-bottom:32px}
+.error-desc strong{color:var(--gray-600);font-weight:600}
+.error-contact{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 24px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:12px;font-size:13px;color:var(--gray-600);font-weight:500}
+.error-contact a{color:var(--red);text-decoration:none;font-weight:700}
+.error-logo{display:flex;align-items:center;gap:10px;margin-bottom:32px;opacity:.7;justify-content:center}
+.error-logo-icon{width:36px;height:36px;background:var(--white);border:1px solid var(--red);border-radius:9px;display:flex;align-items:center;justify-content:center}
+.error-logo-icon svg{width:22px;height:22px;fill:var(--red)}
+.error-logo-text{font-size:14px;font-weight:900;color:var(--black)}
+.pw-input-wrap{display:flex;gap:10px;margin-bottom:12px}
+.pw-input{flex:1;padding:13px 16px;border:2px solid var(--gray-200);border-radius:11px;font-size:15px;font-family:'Noto Sans KR',sans-serif;outline:none;transition:border-color .2s,box-shadow .2s;background:var(--gray-50)}
+.pw-input:focus{border-color:var(--red);box-shadow:0 0 0 4px rgba(232,0,29,.08);background:var(--white)}
+.btn-pw-submit{padding:13px 20px;background:var(--red);color:white;border:none;border-radius:11px;font-size:14px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:background .2s;white-space:nowrap}
+.btn-pw-submit:hover{background:var(--red-dark)}
+.pw-error{font-size:12px;color:var(--red);font-weight:600;display:none;margin-bottom:16px}
+.pw-error.show{display:block}
+
+/* ════ VIEWER ════ */
+#page-viewer{flex-direction:column;background:#1a1a1a}
+.viewer-topbar{background:#111;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0;border-bottom:1px solid #333}
+.viewer-logo{display:flex;align-items:center;gap:8px}
+.viewer-logo-icon{width:28px;height:28px;background:#fff;border:1px solid var(--red);border-radius:6px;display:flex;align-items:center;justify-content:center}
+.viewer-logo-icon svg{width:18px;height:18px;fill:var(--red)}
+.viewer-logo-text{font-size:13px;font-weight:700;color:#fff}
+.viewer-info{font-size:12px;color:#888}
+.viewer-page-ctrl{display:flex;align-items:center;gap:10px}
+.viewer-page-ctrl button{padding:5px 12px;background:#333;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:background .15s}
+.viewer-page-ctrl button:hover{background:var(--red)}
+.viewer-page-ctrl button:disabled{background:#222;color:#555;cursor:not-allowed}
+.viewer-page-num{font-size:12px;color:#aaa;min-width:70px;text-align:center}
+.viewer-body{flex:1;overflow:auto;display:flex;justify-content:center;align-items:flex-start;padding:20px}
+.viewer-canvas-wrap{position:relative;background:#fff;box-shadow:0 8px 40px rgba(0,0,0,.5)}
+#pdfCanvas{display:block}
+.viewer-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;color:#888;gap:12px;padding:60px}
+.viewer-spinner{width:36px;height:36px;border:3px solid #333;border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite}
+
+/* Toast */
+.toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--black);color:white;padding:12px 24px;border-radius:100px;font-size:13px;font-weight:600;opacity:0;transition:all .3s;z-index:9999;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--gray-200);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--gray-400)}
+
+@media(max-width:768px){
+  .dash-container{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  .upload-panel{max-height:60vh}
+  .topnav{padding:0 16px}
+  .topnav-title{display:none}
+  .user-info{display:none}
+}
+</style>
+</head>
+<body>
+
+<svg style="display:none">
+  <symbol id="heart" viewBox="0 0 100 90">
+    <path d="M50 85 C50 85 5 55 5 28 C5 13 17 3 30 3 C38 3 45 7 50 14 C55 7 62 3 70 3 C83 3 95 13 95 28 C95 55 50 85 50 85Z"/>
+  </symbol>
+</svg>
+
+<!-- ═══════════════════ LOGIN ═══════════════════ -->
+<div id="page-login" class="page active">
+  <div class="bg-hearts" id="bgHearts"></div>
+  <div class="login-card">
+    <div class="logo-wrap">
+      <div class="logo-icon"><svg viewBox="0 0 100 90"><use href="#heart"/></svg></div>
+      <div class="logo-title">둘둘치킨 <span>E-Book</span></div>
+      <div class="logo-sub">관리자 시스템</div>
+    </div>
+    <div class="login-divider"></div>
+    <div class="form-group">
+      <label class="form-label">이메일</label>
+      <input type="email" id="loginEmail" class="form-input" placeholder="admin@example.com" autocomplete="email"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">비밀번호</label>
+      <input type="password" id="loginPw" class="form-input" placeholder="••••••••" autocomplete="current-password"/>
+    </div>
+    <button class="btn-login" id="btnLogin" onclick="doLogin()">로그인</button>
+    <div class="login-error" id="loginError"></div>
+    <div class="login-footer">© 2026 둘둘치킨 E-Book 관리시스템</div>
+  </div>
+</div>
+
+<!-- ═══════════════════ DASHBOARD ═══════════════════ -->
+<div id="page-dashboard" class="page">
+  <nav class="topnav">
+    <div class="topnav-logo">
+      <div class="topnav-icon"><svg viewBox="0 0 100 90"><use href="#heart"/></svg></div>
+      <span class="topnav-title">둘둘치킨 E-Book</span>
+    </div>
+    <div class="topnav-right">
+      <span class="badge-role super" id="roleBadge">슈퍼관리자</span>
+      <span class="user-info" id="userEmail"></span>
+      <button class="btn-logout" onclick="doLogout()">로그아웃</button>
+    </div>
+  </nav>
+
+  <div class="dash-container">
+    <!-- LEFT: 업로드 + 설정 -->
+    <div class="upload-panel">
+      <div class="panel-title">새 E-Book 링크 생성</div>
+
+      <!-- Drop zone -->
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="fileInput" accept=".pdf" onchange="onFileSelect(this)"/>
+        <div class="drop-icon">📄</div>
+        <div class="drop-text">PDF 파일을 여기에 끌어다 놓거나</div>
+        <div class="drop-sub">클릭하여 파일 선택</div>
+      </div>
+
+      <!-- 선택된 파일 표시 -->
+      <div class="file-selected" id="fileSelected">
+        <span class="file-selected-icon">📄</span>
+        <span class="file-selected-name" id="fileName"></span>
+        <span class="file-selected-size" id="fileSize"></span>
+        <button class="file-remove" onclick="removeFile()">✕</button>
+      </div>
+
+      <!-- 업로드 진행 -->
+      <div class="upload-progress" id="uploadProgress">
+        <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+        <div class="progress-text" id="progressText">업로드 중...</div>
+      </div>
+
+      <!-- 고객 정보 -->
+      <div class="setting-group">
+        <label class="setting-label">고객명 *</label>
+        <input type="text" id="customerName" class="setting-input" placeholder="홍길동"/>
+      </div>
+
+      <div class="setting-group date-row">
+        <div>
+          <label class="setting-label">발송일자</label>
+          <input type="date" id="sendDate" class="setting-input"/>
+        </div>
+        <div>
+          <label class="setting-label">유효기간 (일수)</label>
+          <input type="number" id="expireDays" class="setting-input" placeholder="예: 7" min="1" max="365"/>
+        </div>
+      </div>
+
+      <!-- 옵션 토글 -->
+      <div class="setting-group">
+        <label class="setting-label">보안 옵션</label>
+
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-name">🔐 비밀번호 보호</div>
+            <div class="toggle-desc">고객이 비밀번호 입력 후 열람</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="usePassword" onchange="togglePwField()"/>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="pw-field" id="pwField">
+          <input type="text" id="linkPassword" class="setting-input" placeholder="비밀번호 입력"/>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-name">🚫 다운로드 금지</div>
+            <div class="toggle-desc">우클릭·저장 차단</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="noDownload" checked/>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <button class="btn-generate" id="btnGenerate" onclick="generateLink()">🔗 링크 생성하기</button>
+
+      <!-- 생성된 링크 -->
+      <div class="link-result" id="linkResult">
+        <div class="link-result-label">✅ 링크가 생성되었습니다</div>
+        <div class="link-result-url" id="generatedUrl"></div>
+        <button class="btn-copy" onclick="copyLink()">링크 복사하기</button>
+      </div>
+    </div>
+
+    <!-- RIGHT: 링크 목록 -->
+    <div class="list-panel">
+      <div class="list-header">
+        <div class="list-stats">
+          <div class="stat-chip">전체 <span id="statTotal">0</span></div>
+          <div class="stat-chip">활성 <span id="statActive">0</span></div>
+        </div>
+        <input type="text" class="list-search" id="searchInput" placeholder="🔍 고객명 검색" oninput="renderLinks()"/>
+      </div>
+      <div class="link-cards" id="linkCards">
+        <div class="empty-state">
+          <div class="empty-icon">📭</div>
+          <p>아직 생성된 링크가 없습니다.<br/>왼쪽에서 PDF를 업로드해 시작하세요.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ ERROR: 만료 ═══════════════════ -->
+<div id="page-expired" class="page error-page" style="background:var(--off-white)">
+  <div class="error-card">
+    <div class="error-logo">
+      <div class="error-logo-icon"><svg viewBox="0 0 100 90"><use href="#heart"/></svg></div>
+      <span class="error-logo-text">둘둘치킨 E-Book</span>
+    </div>
+    <div class="error-icon-wrap expired">⏰</div>
+    <div class="error-tag red">링크 만료</div>
+    <h2 class="error-title">열람 기간이<br/>종료되었습니다</h2>
+    <p class="error-desc">이 문서의 열람 유효기간이 지났습니다.<br/><strong>담당자에게 문의</strong>하시면 새로운 링크를 받으실 수 있습니다.</p>
+    <div class="error-contact">📞 문의하기&nbsp;<a href="tel:010-0000-0000">010-0000-0000</a></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ ERROR: 없음 ═══════════════════ -->
+<div id="page-notfound" class="page error-page" style="background:var(--gray-50)">
+  <div class="error-card">
+    <div class="error-logo">
+      <div class="error-logo-icon"><svg viewBox="0 0 100 90"><use href="#heart"/></svg></div>
+      <span class="error-logo-text">둘둘치킨 E-Book</span>
+    </div>
+    <div class="error-icon-wrap notfound">🔍</div>
+    <div class="error-tag gray">페이지 없음</div>
+    <h2 class="error-title">유효하지 않은<br/>링크입니다</h2>
+    <p class="error-desc">잘못된 주소이거나 삭제된 문서입니다.<br/>링크를 다시 확인하거나 <strong>담당자에게 문의</strong>해 주세요.</p>
+    <div class="error-contact">📞 문의하기&nbsp;<a href="tel:010-0000-0000">010-0000-0000</a></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ ERROR: 잠금 ═══════════════════ -->
+<div id="page-locked" class="page error-page" style="background:var(--off-white)">
+  <div class="error-card">
+    <div class="error-logo">
+      <div class="error-logo-icon"><svg viewBox="0 0 100 90"><use href="#heart"/></svg></div>
+      <span class="error-logo-text">둘둘치킨 E-Book</span>
+    </div>
+    <div class="error-icon-wrap locked">🔐</div>
+    <div class="error-tag red">비밀번호 보호</div>
+    <h2 class="error-title">비밀번호를<br/>입력해 주세요</h2>
+    <p class="error-desc" style="margin-bottom:20px">이 문서는 비밀번호로 보호되어 있습니다.<br/>담당자로부터 받은 비밀번호를 입력해 주세요.</p>
+    <div class="pw-input-wrap">
+      <input type="password" class="pw-input" id="pwInput" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')checkViewerPassword()"/>
+      <button class="btn-pw-submit" onclick="checkViewerPassword()">확인</button>
+    </div>
+    <div class="pw-error" id="pwError">⚠ 비밀번호가 올바르지 않습니다.</div>
+    <div class="error-contact">📞 문의하기&nbsp;<a href="tel:010-0000-0000">010-0000-0000</a></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ VIEWER ═══════════════════ -->
+<div id="page-viewer" class="page">
+  <div class="viewer-topbar">
+    <div class="viewer-logo">
+      <div class="viewer-logo-icon"><svg viewBox="0 0 100 90"><use href="#heart"/></svg></div>
+      <span class="viewer-logo-text">둘둘치킨 E-Book</span>
+    </div>
+    <div class="viewer-page-ctrl">
+      <button id="btnPrev" onclick="changePage(-1)" disabled>◀ 이전</button>
+      <span class="viewer-page-num" id="pageNum">- / -</span>
+      <button id="btnNext" onclick="changePage(1)" disabled>다음 ▶</button>
+    </div>
+    <div class="viewer-info" id="viewerCustomerName"></div>
+  </div>
+  <div class="viewer-body">
+    <div class="viewer-loading" id="viewerLoading">
+      <div class="viewer-spinner"></div>
+      <span>문서를 불러오는 중...</span>
+    </div>
+    <div class="viewer-canvas-wrap" id="canvasWrap" style="display:none">
+      <canvas id="pdfCanvas"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- PDF.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+import { getFirestore, collection, doc, setDoc, getDoc, getDocs, updateDoc, deleteDoc, query, orderBy }
+  from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey:"AIzaSyAXqFNbDuK-NylDPoHIB4QrpYdbg5BZTEY",
+  authDomain:"twotwo-e-book.firebaseapp.com",
+  projectId:"twotwo-e-book",
+  storageBucket:"twotwo-e-book.firebasestorage.app",
+  messagingSenderId:"1018023949536",
+  appId:"1:1018023949536:web:6b0d7de3ad822746708c85"
+};
+
+const SUPER_ADMIN = "sweetysooh@gmail.com";
+const CLOUDINARY_CLOUD = "dpx7cpz6z";
+const CLOUDINARY_PRESET = "unsigned";
+
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+window._db   = db;
+window._auth = auth;
+window._SUPER_ADMIN    = SUPER_ADMIN;
+window._CLOUDINARY_CLOUD  = CLOUDINARY_CLOUD;
+window._CLOUDINARY_PRESET = CLOUDINARY_PRESET;
+
+// ── URL 라우팅 ──
+const params = new URLSearchParams(location.search);
+const viewId = params.get("view");
+
+if (viewId) {
+  // 고객 뷰어 모드
+  loadViewer(viewId);
+} else {
+  // 관리자 모드
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      const role = user.email === SUPER_ADMIN ? "super" : "staff";
+      document.getElementById("userEmail").textContent = user.email;
+      document.getElementById("roleBadge").textContent = role === "super" ? "슈퍼관리자" : "일반직원";
+      document.getElementById("roleBadge").className = "badge-role " + (role==="super"?"super":"staff");
+      showPage("dashboard");
+      loadLinks();
+    } else {
+      showPage("login");
+    }
+  });
+}
+
+// ── Login ──
+window.doLogin = async function() {
+  const email = document.getElementById("loginEmail").value.trim();
+  const pw    = document.getElementById("loginPw").value;
+  const btn   = document.getElementById("btnLogin");
+  if (!email||!pw){showLoginError("이메일과 비밀번호를 입력해 주세요.");return}
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span>로그인 중...';
+  try {
+    await signInWithEmailAndPassword(auth,email,pw);
+  } catch(e) {
+    const msgs={"auth/user-not-found":"등록되지 않은 이메일입니다.","auth/wrong-password":"비밀번호가 올바르지 않습니다.","auth/invalid-email":"이메일 형식이 올바르지 않습니다.","auth/too-many-requests":"잠시 후 다시 시도해 주세요.","auth/invalid-credential":"이메일 또는 비밀번호를 확인해 주세요."};
+    showLoginError(msgs[e.code]||"로그인 중 오류가 발생했습니다.");
+  } finally {btn.disabled=false;btn.innerHTML="로그인"}
+};
+
+function showLoginError(msg){
+  const el=document.getElementById("loginError");
+  el.textContent=msg;el.classList.remove("show");
+  void el.offsetWidth;el.classList.add("show");
+}
+
+window.doLogout = async ()=>{ await signOut(auth) };
+
+// ── File select ──
+let selectedFile = null;
+window.onFileSelect = function(input){
+  const f = input.files[0];
+  if(!f) return;
+  if(f.type!=="application/pdf"){showToast("PDF 파일만 업로드 가능합니다.");return}
+  if(f.size>52428800){showToast("파일 크기는 50MB 이하여야 합니다.");return}
+  selectedFile = f;
+  document.getElementById("fileName").textContent = f.name;
+  document.getElementById("fileSize").textContent = (f.size/1048576).toFixed(1)+"MB";
+  document.getElementById("fileSelected").classList.add("show");
+  document.getElementById("dropZone").style.display="none";
+};
+
+window.removeFile = function(){
+  selectedFile=null;
+  document.getElementById("fileSelected").classList.remove("show");
+  document.getElementById("dropZone").style.display="";
+  document.getElementById("fileInput").value="";
+  document.getElementById("linkResult").classList.remove("show");
+};
+
+// Drag & drop
+const dz = document.getElementById("dropZone");
+dz.addEventListener("dragover",e=>{e.preventDefault();dz.classList.add("drag-over")});
+dz.addEventListener("dragleave",()=>dz.classList.remove("drag-over"));
+dz.addEventListener("drop",e=>{
+  e.preventDefault();dz.classList.remove("drag-over");
+  const f=e.dataTransfer.files[0];
+  if(f){const dt=new DataTransfer();dt.items.add(f);document.getElementById("fileInput").files=dt.files;window.onFileSelect(document.getElementById("fileInput"))}
+});
+
+window.togglePwField = function(){
+  document.getElementById("pwField").classList.toggle("show",document.getElementById("usePassword").checked);
+};
+
+// ── Generate Link ──
+window.generateLink = async function(){
+  if(!selectedFile){showToast("PDF 파일을 먼저 선택해 주세요.");return}
+  const customerName = document.getElementById("customerName").value.trim();
+  if(!customerName){showToast("고객명을 입력해 주세요.");return}
+
+  const btn=document.getElementById("btnGenerate");
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner"></span>업로드 중...';
+
+  try {
+    // 1. Cloudinary 업로드
+    const pdfUrl = await uploadToCloudinary(selectedFile);
+
+    // 2. 링크 ID 생성
+    const linkId = generateId();
+
+    // 3. 설정값 수집
+    const usePassword = document.getElementById("usePassword").checked;
+    const linkPassword = usePassword ? document.getElementById("linkPassword").value : null;
+    const noDownload = document.getElementById("noDownload").checked;
+    const expireDays = parseInt(document.getElementById("expireDays").value)||0;
+    const sendDate = document.getElementById("sendDate").value || new Date().toISOString().split("T")[0];
+    const expireDate = expireDays>0
+      ? new Date(Date.now()+expireDays*86400000).toISOString().split("T")[0]
+      : null;
+
+    // 4. Firestore 저장
+    await setDoc(doc(db,"links",linkId),{
+      id: linkId,
+      customerName,
+      fileName: selectedFile.name,
+      pdfUrl,
+      usePassword,
+      password: linkPassword,
+      noDownload,
+      sendDate,
+      expireDate,
+      active: true,
+      createdAt: new Date().toISOString(),
+      createdBy: auth.currentUser?.email||"",
+    });
+
+    // 5. 링크 표시
+    const url = `${location.origin}${location.pathname}?view=${linkId}`;
+    document.getElementById("generatedUrl").textContent = url;
+    document.getElementById("linkResult").classList.add("show");
+    window._lastGeneratedUrl = url;
+
+    showToast("✅ 링크가 생성되었습니다!");
+    loadLinks();
+
+    // 초기화
+    removeFile();
+    document.getElementById("customerName").value="";
+    document.getElementById("expireDays").value="";
+    document.getElementById("usePassword").checked=false;
+    document.getElementById("noDownload").checked=true;
+    document.getElementById("linkPassword").value="";
+    document.getElementById("pwField").classList.remove("show");
+
+  } catch(e){
+    console.error(e);
+    showToast("오류가 발생했습니다: "+e.message);
+  } finally {
+    btn.disabled=false;
+    btn.innerHTML="🔗 링크 생성하기";
+  }
+};
+
+// ── Cloudinary Upload ──
+async function uploadToCloudinary(file){
+  return new Promise((resolve,reject)=>{
+    const formData=new FormData();
+    formData.append("file",file);
+    formData.append("upload_preset",window._CLOUDINARY_PRESET);
+    formData.append("folder","ebook");
+    formData.append("resource_type","raw");
+
+    const xhr=new XMLHttpRequest();
+    xhr.open("POST",`https://api.cloudinary.com/v1_1/${window._CLOUDINARY_CLOUD}/raw/upload`);
+
+    xhr.upload.onprogress=e=>{
+      if(e.lengthComputable){
+        const pct=Math.round(e.loaded/e.total*100);
+        document.getElementById("uploadProgress").classList.add("show");
+        document.getElementById("progressBar").style.width=pct+"%";
+        document.getElementById("progressText").textContent=`업로드 중... ${pct}%`;
+      }
+    };
+
+    xhr.onload=()=>{
+      document.getElementById("uploadProgress").classList.remove("show");
+      document.getElementById("progressBar").style.width="0%";
+      if(xhr.status===200){
+        const data=JSON.parse(xhr.responseText);
+        resolve(data.secure_url);
+      } else {
+        reject(new Error("Cloudinary 업로드 실패: "+xhr.responseText));
+      }
+    };
+    xhr.onerror=()=>reject(new Error("네트워크 오류"));
+    xhr.send(formData);
+  });
+}
+
+// ── Load Links ──
+async function loadLinks(){
+  try {
+    const q = query(collection(db,"links"),orderBy("createdAt","desc"));
+    const snap = await getDocs(q);
+    window._links = snap.docs.map(d=>d.data());
+    renderLinks();
+  } catch(e){ console.error(e) }
+}
+window.loadLinks = loadLinks;
+
+window.renderLinks = function(){
+  const search = document.getElementById("searchInput")?.value.toLowerCase()||"";
+  const links = (window._links||[]).filter(l=>l.customerName?.toLowerCase().includes(search));
+  const total = links.length;
+  const active = links.filter(l=>l.active&&!isExpired(l)).length;
+  document.getElementById("statTotal").textContent=total;
+  document.getElementById("statActive").textContent=active;
+
+  const container=document.getElementById("linkCards");
+  if(!total){
+    container.innerHTML=`<div class="empty-state"><div class="empty-icon">📭</div><p>검색 결과가 없습니다.</p></div>`;
+    return;
+  }
+
+  container.innerHTML=links.map(l=>{
+    const url=`${location.origin}${location.pathname}?view=${l.id}`;
+    const expired=isExpired(l);
+    const statusBadge=!l.active?`<span class="badge badge-inactive">비활성</span>`:
+      expired?`<span class="badge badge-expired-tag">만료됨</span>`:
+      `<span class="badge badge-active">활성</span>`;
+    return `
+    <div class="link-card ${!l.active||expired?'inactive':''}" data-id="${l.id}">
+      <div class="card-top">
+        <div>
+          <div class="card-customer">${l.customerName}</div>
+          <div class="card-file">📄 ${l.fileName||''}</div>
+        </div>
+        <div class="card-badges">
+          ${statusBadge}
+          ${l.usePassword?'<span class="badge badge-pw">🔐 비번</span>':''}
+          ${l.noDownload?'<span class="badge badge-nodl">🚫 다운금지</span>':''}
+        </div>
+      </div>
+      <div class="card-mid">
+        <div class="card-meta">발송 <strong>${l.sendDate||'-'}</strong></div>
+        <div class="card-meta">만료 <strong>${l.expireDate||'무제한'}</strong></div>
+        <div class="card-meta">등록자 <strong>${l.createdBy||'-'}</strong></div>
+      </div>
+      <div class="card-url-row">
+        <span class="card-url">${url}</span>
+        <div class="card-actions">
+          <button class="btn-card copy" onclick="copyUrl('${url}')">복사</button>
+          <button class="btn-card" onclick="toggleActive('${l.id}',${!l.active})">${l.active?'비활성':'활성화'}</button>
+          <button class="btn-card danger" onclick="deleteLink('${l.id}')">삭제</button>
+        </div>
+      </div>
+    </div>`}).join("");
+};
+
+function isExpired(l){
+  if(!l.expireDate) return false;
+  return new Date(l.expireDate)<new Date(new Date().toDateString());
+}
+
+window.copyUrl = function(url){
+  navigator.clipboard.writeText(url).then(()=>showToast("링크가 복사되었습니다!"));
+};
+
+window.copyLink = function(){
+  const url = document.getElementById("generatedUrl").textContent;
+  navigator.clipboard.writeText(url).then(()=>showToast("링크가 복사되었습니다!"));
+};
+
+window.toggleActive = async function(id,active){
+  await updateDoc(doc(db,"links",id),{active});
+  showToast(active?"링크가 활성화되었습니다.":"링크가 비활성화되었습니다.");
+  loadLinks();
+};
+
+window.deleteLink = async function(id){
+  if(!confirm("이 링크를 삭제할까요?")) return;
+  await deleteDoc(doc(db,"links",id));
+  showToast("링크가 삭제되었습니다.");
+  loadLinks();
+};
+
+// ── VIEWER ──
+let pdfDoc=null, currentPage=1, viewerLinkData=null;
+
+async function loadViewer(linkId){
+  showPage("viewer");
+  try {
+    const snap = await getDoc(doc(db,"links",linkId));
+    if(!snap.exists()){showPage("notfound");return}
+    const data = snap.data();
+    viewerLinkData = data;
+
+    // 비활성 체크
+    if(!data.active){showPage("notfound");return}
+
+    // 만료 체크
+    if(data.expireDate && new Date(data.expireDate)<new Date(new Date().toDateString())){
+      showPage("expired");return
+    }
+
+    // 비밀번호 체크
+    if(data.usePassword){
+      showPage("locked");
+      window._pendingViewerData=data;
+      return;
+    }
+
+    openPdfViewer(data);
+  } catch(e){
+    console.error(e);
+    showPage("notfound");
+  }
+}
+
+window.checkViewerPassword = function(){
+  const input = document.getElementById("pwInput").value;
+  const data = window._pendingViewerData;
+  if(!data) return;
+  if(input===data.password){
+    document.getElementById("pwError").classList.remove("show");
+    showPage("viewer");
+    openPdfViewer(data);
+  } else {
+    document.getElementById("pwError").classList.add("show");
+    document.getElementById("pwInput").value="";
+  }
+};
+
+function openPdfViewer(data){
+  document.getElementById("viewerCustomerName").textContent = data.customerName||"";
+
+  // 다운로드 금지
+  if(data.noDownload){
+    document.addEventListener("contextmenu",e=>e.preventDefault());
+    document.addEventListener("keydown",e=>{
+      if((e.ctrlKey||e.metaKey)&&(e.key==="s"||e.key==="p")){e.preventDefault()}
+    });
+  }
+
+  pdfjsLib.GlobalWorkerOptions.workerSrc=
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+  pdfjsLib.getDocument({url:data.pdfUrl,withCredentials:false}).promise.then(pdf=>{
+    pdfDoc=pdf;
+    currentPage=1;
+    document.getElementById("viewerLoading").style.display="none";
+    document.getElementById("canvasWrap").style.display="";
+    renderPage(currentPage);
+  }).catch(e=>{
+    console.error(e);
+    document.getElementById("viewerLoading").innerHTML="<p style='color:#f66'>문서를 불러올 수 없습니다.</p>";
+  });
+}
+
+function renderPage(num){
+  pdfDoc.getPage(num).then(page=>{
+    const vp = page.getViewport({scale:Math.min(1.4,(window.innerWidth-60)/page.getViewport({scale:1}).width)});
+    const canvas=document.getElementById("pdfCanvas");
+    canvas.width=vp.width;canvas.height=vp.height;
+    page.render({canvasContext:canvas.getContext("2d"),viewport:vp});
+    document.getElementById("pageNum").textContent=`${num} / ${pdfDoc.numPages}`;
+    document.getElementById("btnPrev").disabled=num<=1;
+    document.getElementById("btnNext").disabled=num>=pdfDoc.numPages;
+  });
+}
+
+window.changePage = function(dir){
+  const next=currentPage+dir;
+  if(next<1||next>pdfDoc?.numPages) return;
+  currentPage=next;
+  renderPage(currentPage);
+};
+
+// ── UTILS ──
+function generateId(){
+  return Math.random().toString(36).slice(2,8)+Math.random().toString(36).slice(2,8);
+}
+
+window._lastGeneratedUrl="";
+</script>
+
+<script>
+function showPage(name){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.getElementById("page-"+name).classList.add("active");
+}
+
+function showToast(msg){
+  const t=document.getElementById("toast");
+  t.textContent=msg;
+  t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"),2500);
+}
+
+// Enter key for login
+document.addEventListener("keydown",e=>{
+  if(e.key==="Enter"&&document.getElementById("page-login").classList.contains("active")){
+    window.doLogin?.();
+  }
+});
+
+// Floating hearts
+(function(){
+  const c=document.getElementById("bgHearts");
+  if(!c) return;
+  for(let i=0;i<12;i++){
+    const d=document.createElement("div");
+    d.className="bg-heart";
+    const s=20+Math.random()*60;
+    d.style.cssText=`left:${Math.random()*100}%;bottom:-${s}px;width:${s}px;height:${s}px;animation-duration:${12+Math.random()*18}s;animation-delay:${Math.random()*15}s;`;
+    d.innerHTML=`<svg viewBox="0 0 100 90" width="${s}" height="${s}"><use href="#heart"/></svg>`;
+    c.appendChild(d);
+  }
+})();
+</script>
+</body>
+</html>

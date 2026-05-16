@@ -617,10 +617,11 @@ const params = new URLSearchParams(location.search);
 const viewId = params.get("view");
 
 if (viewId) {
-  // 고객 뷰어 모드
+  // 고객 뷰어 모드 — 인증 불필요, 즉시 실행
+  showPage("viewer");
   loadViewer(viewId);
 } else {
-  // 관리자 모드
+  // 관리자 모드 — 인증 필요
   onAuthStateChanged(auth, (user) => {
     if (user) {
       const role = user.email === SUPER_ADMIN ? "super" : "staff";
@@ -888,7 +889,6 @@ const DPR=Math.min(window.devicePixelRatio||1,3);
 
 async function loadViewer(linkId){
   _linkId=linkId;
-  showPage("viewer");
   try {
     const snap = await getDoc(doc(db,"links",linkId));
     if(!snap.exists()){showPage("notfound");return}

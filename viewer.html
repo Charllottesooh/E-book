@@ -8,10 +8,7 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='16' fill='white'/%3E%3Cpath d='M50 82 C30 64 10 48 10 28 C10 12 24 4 38 10 C44 13 49 20 50 23 C51 20 56 13 62 10 C76 4 90 12 90 28 C90 48 70 64 50 82Z' fill='%23E60012'/%3E%3C/svg%3E">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/turn-js/turn.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
@@ -21,29 +18,120 @@
         .hidden { display: none !important; }
 
         .lock-screen { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); text-align: center; width: 90%; max-width: 400px; z-index: 999; }
-        .lock-screen i { font-size: 48px; color: #E60012; margin-bottom: 15px; }
         .lock-screen h2 { font-size: 20px; margin-bottom: 10px; color: #1e293b; }
         .lock-screen input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 15px; text-align: center; font-size: 16px; outline: none; }
         .lock-screen button { width: 100%; padding: 12px; background: #E60012; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
 
         .viewer-container { width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; }
-        .viewer-header { background: rgba(15, 23, 42, 0.95); color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.1); z-index: 10; }
-        .viewer-header .title { font-weight: bold; display: flex; align-items: center; gap: 10px; font-size: 16px; }
-        .viewer-header .title i { color: #E60012; }
-        
-        .viewer-body { flex: 1; display: flex; justify-content: center; align-items: center; padding: 40px; position: relative; overflow: auto; }
-        #flipbook-wrapper { transition: transform 0.2s ease-out; transform-origin: center center; display: flex; justify-content: center; align-items: center; }
-        #flipbook { width: 900px; height: 600px; display: none; box-shadow: 0 25px 50px rgba(0,0,0,0.8); }
-        .page-node { background: white; width: 450px; height: 600px; position: relative; display: flex; justify-content: center; align-items: center; }
-        canvas { width: 100% !important; height: 100% !important; object-fit: contain; }
+        .viewer-header { background: rgba(15,23,42,0.95); color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.1); z-index: 10; flex-shrink: 0; }
+        .viewer-header .title { font-weight: bold; display: flex; align-items: center; gap: 8px; font-size: 14px; }
 
-        .nav-controls { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; gap: 20px; background: rgba(30, 41, 59, 0.9); padding: 10px 25px; border-radius: 40px; z-index: 100; align-items: center; color: white; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(5px); }
-        .nav-controls button { background: none; border: none; color: white; font-size: 18px; cursor: pointer; padding: 0 10px; transition: 0.2s; }
+        .viewer-body { flex: 1; display: flex; justify-content: center; align-items: center; padding: 16px 16px 72px; position: relative; overflow: hidden; }
+
+        /* 책장 말리기 애니메이션 컨테이너 */
+        #flipbook-wrapper { transition: transform 0.2s ease-out; transform-origin: center center; display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; perspective: 2000px; }
+
+        #flipbook { position: relative; display: none; background: white; box-shadow: 0 20px 60px rgba(0,0,0,0.8); }
+
+        /* 페이지 캔버스 기본 */
+        .page-canvas {
+            display: none;
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            backface-visibility: hidden;
+        }
+        .page-canvas.active { display: block; }
+
+        /* 다음 페이지 (오른쪽→왼쪽으로 말리며 넘어감) */
+        .page-canvas.flip-out {
+            display: block;
+            transform-origin: left center;
+            animation: flipPageOut 0.55s cubic-bezier(0.645, 0.045, 0.355, 1.000) forwards;
+        }
+        .page-canvas.flip-in {
+            display: block;
+            transform-origin: left center;
+            animation: flipPageIn 0.55s cubic-bezier(0.645, 0.045, 0.355, 1.000) forwards;
+        }
+
+        /* 이전 페이지 (왼쪽→오른쪽으로 펼쳐짐) */
+        .page-canvas.flip-out-prev {
+            display: block;
+            transform-origin: right center;
+            animation: flipPageOutPrev 0.55s cubic-bezier(0.645, 0.045, 0.355, 1.000) forwards;
+        }
+        .page-canvas.flip-in-prev {
+            display: block;
+            transform-origin: right center;
+            animation: flipPageInPrev 0.55s cubic-bezier(0.645, 0.045, 0.355, 1.000) forwards;
+        }
+
+        /* 다음: 현재 페이지가 왼쪽으로 말리며 사라짐 */
+        @keyframes flipPageOut {
+            0%   { transform: perspective(1200px) rotateY(0deg); opacity: 1; box-shadow: 0 0 30px rgba(0,0,0,0.3); }
+            100% { transform: perspective(1200px) rotateY(-150deg); opacity: 0; box-shadow: none; }
+        }
+        /* 다음: 새 페이지가 오른쪽에서 말리며 등장 */
+        @keyframes flipPageIn {
+            0%   { transform: perspective(1200px) rotateY(150deg); opacity: 0; }
+            100% { transform: perspective(1200px) rotateY(0deg); opacity: 1; box-shadow: 0 0 30px rgba(0,0,0,0.3); }
+        }
+        /* 이전: 현재 페이지가 오른쪽으로 말리며 사라짐 */
+        @keyframes flipPageOutPrev {
+            0%   { transform: perspective(1200px) rotateY(0deg); opacity: 1; }
+            100% { transform: perspective(1200px) rotateY(150deg); opacity: 0; }
+        }
+        /* 이전: 새 페이지가 왼쪽에서 펼쳐짐 */
+        @keyframes flipPageInPrev {
+            0%   { transform: perspective(1200px) rotateY(-150deg); opacity: 0; }
+            100% { transform: perspective(1200px) rotateY(0deg); opacity: 1; }
+        }
+
+        /* 페이지 말림 그림자 오버레이 */
+        #page-curl {
+            display: none;
+            position: absolute;
+            bottom: 0; right: 0;
+            width: 0; height: 0;
+            z-index: 10;
+            pointer-events: none;
+        }
+        #page-curl.curling {
+            display: block;
+            width: 80px; height: 80px;
+            background: radial-gradient(circle at 100% 100%, transparent 60%, rgba(0,0,0,0.15) 100%);
+            animation: curlCorner 0.55s ease forwards;
+        }
+        @keyframes curlCorner {
+            0%   { width: 0; height: 0; }
+            40%  { width: 80px; height: 80px; }
+            100% { width: 0; height: 0; }
+        }
+
+        .nav-controls {
+            position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 12px;
+            background: rgba(30,41,59,0.92); padding: 8px 20px;
+            border-radius: 40px; z-index: 100; align-items: center; color: white;
+            border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(5px);
+            white-space: nowrap;
+        }
+        .nav-controls button { background: none; border: none; color: white; font-size: 16px; cursor: pointer; padding: 0 6px; transition: 0.2s; }
         .nav-controls button:hover { color: #E60012; transform: scale(1.1); }
-        .nav-controls .divider { width: 1px; height: 20px; background: rgba(255,255,255,0.2); }
-        
-        .loading-box { color: white; font-size: 16px; font-weight: bold; text-align: center; position: absolute; }
-        .loading-box i { font-size: 35px; margin-bottom: 12px; color: #E60012; display: block; }
+        .nav-controls .divider { width: 1px; height: 18px; background: rgba(255,255,255,0.2); }
+
+        .loading-box { color: white; font-size: 15px; font-weight: bold; text-align: center; position: absolute; padding: 0 20px; }
+        .loading-box i { font-size: 32px; margin-bottom: 12px; color: #E60012; display: block; }
+
+        /* 모바일 대응 */
+        @media (max-width: 600px) {
+            .viewer-header { padding: 10px 14px; }
+            .viewer-header .title { font-size: 12px; }
+            #recipientDisplay { display: none; }
+            .viewer-body { padding: 10px 8px 68px; }
+            .nav-controls { gap: 8px; padding: 7px 14px; font-size: 13px; }
+        }
     </style>
 </head>
 <body>
@@ -58,20 +146,25 @@
 
     <div id="viewerScreen" class="viewer-container hidden">
         <div class="viewer-header">
-            <div class="title"><svg width="28" height="28" viewBox="0 0 100 100" style="vertical-align:middle;border-radius:6px;flex-shrink:0;"><rect width="100" height="100" rx="16" fill="white"/><path d="M50 82 C30 64 10 48 10 28 C10 12 24 4 38 10 C44 13 49 20 50 23 C51 20 56 13 62 10 C76 4 90 12 90 28 C90 48 70 64 50 82Z" fill="#E60012"/></svg> <span id="docTitleDisplay">문서 로딩 중...</span></div>
-            <div id="recipientDisplay" style="color:#94a3b8; font-weight:500;"></div>
+            <div class="title">
+                <svg width="24" height="24" viewBox="0 0 100 100" style="vertical-align:middle;border-radius:5px;flex-shrink:0;"><rect width="100" height="100" rx="16" fill="white"/><path d="M50 82 C30 64 10 48 10 28 C10 12 24 4 38 10 C44 13 49 20 50 23 C51 20 56 13 62 10 C76 4 90 12 90 28 C90 48 70 64 50 82Z" fill="#E60012"/></svg>
+                <span id="docTitleDisplay">문서 로딩 중...</span>
+            </div>
+            <div id="recipientDisplay" style="color:#94a3b8; font-weight:500; font-size:13px;"></div>
         </div>
-        
+
         <div class="viewer-body">
             <div id="loadingBox" class="loading-box"><i class="fas fa-circle-notch fa-spin"></i>안전한 보안 환경에서 전자책을 구성 중입니다...</div>
             <div id="flipbook-wrapper">
-                <div id="flipbook"></div>
+                <div id="flipbook">
+                    <div id="page-curl"></div>
+                </div>
             </div>
         </div>
 
         <div class="nav-controls">
             <button id="prevBtn" title="이전 페이지"><i class="fas fa-chevron-left"></i></button>
-            <span id="pageIndicator" style="min-width: 60px; text-align: center; font-weight: bold;">0 / 0</span>
+            <span id="pageIndicator" style="min-width: 55px; text-align: center; font-weight: bold; font-size:14px;">0 / 0</span>
             <button id="nextBtn" title="다음 페이지"><i class="fas fa-chevron-right"></i></button>
             <div class="divider"></div>
             <button id="zoomOutBtn" title="축소"><i class="fas fa-magnifying-glass-minus"></i></button>
@@ -85,43 +178,44 @@
         const firebaseConfig = {
             apiKey: "AIzaSyAXqFNbDuK-NylDPoHIB4QrpYdbg5BZTEY",
             authDomain: "twotwo-e-book.firebaseapp.com",
-            databaseURL: "https://twotwo-e-book-default-rtdb.asia-southeast1.firebasedatabase.app", 
+            databaseURL: "https://twotwo-e-book-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "twotwo-e-book",
             storageBucket: "twotwo-e-book.firebasestorage.app"
         };
 
-        firebase.initializeApp(firebaseConfig);
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
         const urlParams = new URLSearchParams(window.location.search);
         const shortId = urlParams.get('id');
         let linkData = null;
         let currentZoom = 1.0;
+        let pages = [];
+        let currentPage = 0;
+        let isAnimating = false;
 
         if (!shortId) {
-            document.body.innerHTML = "<div style='color:white; font-weight:bold; padding:20px;'>❌ 유효하지 않은 접근 주소입니다.</div>";
+            document.body.innerHTML = "<div style='color:white;font-weight:bold;padding:20px;'>❌ 유효하지 않은 접근 주소입니다.</div>";
         } else {
             database.ref('issued_links/' + shortId).once('value').then(snapshot => {
                 if (!snapshot.exists()) {
-                    document.body.innerHTML = "<div style='color:white; font-weight:bold; padding:20px;'>❌ 파기되었거나 존재하지 않는 보안 링크입니다.</div>";
+                    document.body.innerHTML = "<div style='color:white;font-weight:bold;padding:20px;'>❌ 파기되었거나 존재하지 않는 보안 링크입니다.</div>";
                     return;
                 }
                 linkData = snapshot.val();
-                
                 const today = new Date().toISOString().split('T')[0];
                 if (linkData.expireDate && today > linkData.expireDate) {
-                    document.body.innerHTML = "<div style='color:white; font-weight:bold; padding:20px;'>🔒 열람 기간이 만료된 주소입니다.</div>";
+                    document.body.innerHTML = "<div style='color:white;font-weight:bold;padding:20px;'>🔒 열람 기간이 만료된 주소입니다.</div>";
                     return;
                 }
-
                 if (linkData.password) {
                     document.getElementById('lockScreen').classList.remove('hidden');
-                    document.getElementById('lockTarget').innerText = `${linkData.recipient} 점주님께 발송된 보안 문서입니다.`;
+                    document.getElementById('lockTarget').innerText = `${linkData.recipient} 님께 발송된 보안 문서입니다.`;
                 } else {
                     openSecureViewer();
                 }
             }).catch(err => {
-                document.body.innerHTML = "<div style='color:white; padding:20px;'>시스템 초기화 실패</div>";
+                document.body.innerHTML = "<div style='color:white;padding:20px;'>❌ 시스템 초기화 실패: " + err.message + "</div>";
             });
         }
 
@@ -132,98 +226,159 @@
                 alert('🔑 비밀번호가 일치하지 않습니다.');
             }
         });
-
-        document.getElementById('viewerPwdInput').addEventListener('keypress', (e) => {
-            if(e.key === 'Enter') document.getElementById('unlockBtn').click();
+        document.getElementById('viewerPwdInput').addEventListener('keypress', e => {
+            if (e.key === 'Enter') document.getElementById('unlockBtn').click();
         });
+
+        // 책장 말리기 애니메이션으로 페이지 전환
+        function goToPage(nextIdx) {
+            if (isAnimating || nextIdx < 0 || nextIdx >= pages.length || nextIdx === currentPage) return;
+            isAnimating = true;
+            const isNext = nextIdx > currentPage;
+            const current = pages[currentPage];
+            const next = pages[nextIdx];
+
+            // 코너 말림 효과
+            const curl = document.getElementById('page-curl');
+            curl.className = 'curling';
+            setTimeout(() => { curl.className = ''; }, 560);
+
+            // 현재 페이지 말리며 사라짐
+            current.classList.remove('active');
+            current.classList.add(isNext ? 'flip-out' : 'flip-out-prev');
+
+            // 새 페이지 말리며 등장
+            next.style.display = 'block';
+            next.classList.add(isNext ? 'flip-in' : 'flip-in-prev');
+
+            setTimeout(() => {
+                current.classList.remove('flip-out', 'flip-out-prev');
+                current.style.display = 'none';
+                next.classList.remove('flip-in', 'flip-in-prev');
+                next.classList.add('active');
+                currentPage = nextIdx;
+                document.getElementById('pageIndicator').textContent = `${currentPage + 1} / ${pages.length}`;
+                isAnimating = false;
+            }, 560);
+        }
 
         async function openSecureViewer() {
             document.getElementById('lockScreen').classList.add('hidden');
             document.getElementById('viewerScreen').classList.remove('hidden');
             document.getElementById('docTitleDisplay').innerText = linkData.fileName;
-            document.getElementById('recipientDisplay').innerText = `수신: ${linkData.recipient} 명의`;
+            document.getElementById('recipientDisplay').innerText = `수신: ${linkData.recipient} 님`;
 
             database.ref('master_files/' + linkData.fileKey).once('value').then(async masterSnap => {
-                if(!masterSnap.exists()) return alert('마스터 파일을 찾을 수 없습니다.');
-                
+                if (!masterSnap.exists()) return alert('마스터 파일을 찾을 수 없습니다.');
                 const masterData = masterSnap.val();
-                
-                // 🔥 CORS 에러 완벽 회피 우회 엔진 탑재 (Base64 다이렉트 변환 처리 검증)
-                let pdfTarget = masterData.fileUrl;
-                if (pdfTarget.startsWith('data:application/pdf;base64,')) {
-                    const base64Content = pdfTarget.split(',')[1];
-                    const raw = window.atob(base64Content);
-                    const rawLength = raw.length;
-                    const array = new Uint8Array(new ArrayBuffer(rawLength));
-                    for (let i = 0; i < rawLength; i++) { array[i] = raw.charCodeAt(i); }
-                    pdfTarget = array;
+
+                const fileUrl = masterData.fileUrl;
+                let pdfLoadParam;
+
+                if (fileUrl.startsWith('http')) {
+                    // ✅ Storage URL - 직접 로드 (빠름)
+                    pdfLoadParam = { url: fileUrl };
+                } else if (fileUrl.startsWith('data:application/pdf;base64,')) {
+                    // 구버전 base64 호환
+                    const b64 = fileUrl.split(',')[1];
+                    const raw = window.atob(b64);
+                    const arr = new Uint8Array(raw.length);
+                    for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+                    pdfLoadParam = { data: arr };
+                } else {
+                    return alert('지원하지 않는 파일 형식입니다.');
                 }
 
-                const loadingTask = pdfjsLib.getDocument({data: pdfTarget, disableCORS: true, disableAutoFetch: true});
-                const pdf = await loadingTask.promise;
+                const pdf = await pdfjsLib.getDocument({ ...pdfLoadParam, cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/cmaps/', cMapPacked: true }).promise;
                 const totalPages = pdf.numPages;
-                const flipbook = $('#flipbook');
-                
-                const renderScale = 2.0;
+                const flipbook = document.getElementById('flipbook');
+
+                // 기존 캔버스 제거 (curl div 유지)
+                Array.from(flipbook.querySelectorAll('canvas')).forEach(c => c.remove());
+                pages = [];
+
+                // 화면 크기 및 DPR 계산 (모바일 고해상도 대응)
+                const body = document.querySelector('.viewer-body');
+                const maxW = body.clientWidth - 32;
+                const maxH = body.clientHeight - 32;
+                const dpr = Math.min(window.devicePixelRatio || 1, 3); // 최대 3배
+
+                const firstPage = await pdf.getPage(1);
+                const baseVp = firstPage.getViewport({ scale: 1 });
+                const fitScale = Math.min(maxW / baseVp.width, maxH / baseVp.height);
+                const renderScale = fitScale * dpr; // 실제 렌더 해상도
+
+                const dispW = Math.round(baseVp.width * fitScale);
+                const dispH = Math.round(baseVp.height * fitScale);
+
+                flipbook.style.width  = dispW + 'px';
+                flipbook.style.height = dispH + 'px';
 
                 for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
-                    const pageNode = $('<div class="page-node"></div>');
                     const canvas = document.createElement('canvas');
-                    pageNode.append(canvas);
-                    flipbook.append(pageNode);
+                    canvas.className = 'page-canvas' + (pageNum === 1 ? ' active' : '');
+                    canvas.style.display = pageNum === 1 ? 'block' : 'none';
+                    // CSS 크기는 표시 크기, 실제 픽셀은 DPR 배수
+                    canvas.style.width  = dispW + 'px';
+                    canvas.style.height = dispH + 'px';
+                    canvas.width  = Math.round(baseVp.width * renderScale);
+                    canvas.height = Math.round(baseVp.height * renderScale);
+                    flipbook.insertBefore(canvas, document.getElementById('page-curl'));
+                    pages.push(canvas);
 
                     const page = await pdf.getPage(pageNum);
                     const viewport = page.getViewport({ scale: renderScale });
-                    const context = canvas.getContext('2d');
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
-
-                    await page.render({ canvasContext: context, viewport: viewport }).promise;
+                    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
                 }
 
-                $('#loadingBox').hide();
-                flipbook.show();
+                document.getElementById('loadingBox').style.display = 'none';
+                flipbook.style.display = 'block';
+                document.getElementById('pageIndicator').textContent = `1 / ${totalPages}`;
 
-                flipbook.turn({
-                    width: 900,
-                    height: 600,
-                    elevation: 50,
-                    gradients: true,
-                    autoCenter: true,
-                    duration: 800,
-                    when: {
-                        turned: function(e, page) {
-                            $('#pageIndicator').text(`${page} / ${totalPages}`);
-                        }
+                document.getElementById('prevBtn').onclick = () => goToPage(currentPage - 1);
+                document.getElementById('nextBtn').onclick = () => goToPage(currentPage + 1);
+
+                // 모바일 스와이프 지원 (확대 상태에서는 비활성화)
+                let touchStartX = 0;
+                let touchStartY = 0;
+                flipbook.addEventListener('touchstart', e => {
+                    touchStartX = e.touches[0].clientX;
+                    touchStartY = e.touches[0].clientY;
+                }, { passive: true });
+                flipbook.addEventListener('touchend', e => {
+                    if (currentZoom > 1.05) return; // 확대 상태면 스와이프 무시
+                    const dx = e.changedTouches[0].clientX - touchStartX;
+                    const dy = e.changedTouches[0].clientY - touchStartY;
+                    // 수평 이동이 수직보다 클 때만 페이지 전환
+                    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+                        dx < 0 ? goToPage(currentPage + 1) : goToPage(currentPage - 1);
                     }
                 });
 
-                $('#prevBtn').click(() => flipbook.turn('previous'));
-                $('#nextBtn').click(() => flipbook.turn('next'));
-
-                const updateZoom = () => {
-                    $('#flipbook-wrapper').css('transform', `scale(${currentZoom})`);
+                const wrapper = document.getElementById('flipbook-wrapper');
+                document.getElementById('zoomInBtn').onclick = () => {
+                    if (currentZoom < 2.5) { currentZoom = +(currentZoom + 0.2).toFixed(1); wrapper.style.transform = `scale(${currentZoom})`; }
                 };
-
-                $('#zoomInBtn').click(() => {
-                    if (currentZoom < 2.5) { currentZoom += 0.2; updateZoom(); }
-                });
-
-                $('#zoomOutBtn').click(() => {
-                    if (currentZoom > 0.5) { currentZoom -= 0.2; updateZoom(); }
-                });
+                document.getElementById('zoomOutBtn').onclick = () => {
+                    if (currentZoom > 0.5) { currentZoom = +(currentZoom - 0.2).toFixed(1); wrapper.style.transform = `scale(${currentZoom})`; }
+                };
 
                 if (linkData.blockDownload === 'Y') {
                     window.addEventListener('keydown', e => {
-                        if (e.ctrlKey && (e.key === 'p' || e.key === 's' || e.key === 'u')) e.preventDefault();
+                        if (e.ctrlKey && ['p','s','u'].includes(e.key)) e.preventDefault();
                     });
                     document.addEventListener('contextmenu', e => e.preventDefault());
                 }
 
-                const nowStr = new Date().toLocaleString();
-                const updates = { isViewed: "열람", lastView: nowStr, viewCount: (linkData.viewCount || 0) + 1 };
+                // 열람 통계 업데이트
+                const nowStr = new Date().toLocaleString('ko-KR');
+                const newCount = (linkData.viewCount || 0) + 1;
+                const updates = { isViewed: "열람", lastView: nowStr, viewCount: newCount };
                 if (!linkData.firstView || linkData.firstView === "-") updates.firstView = nowStr;
-                database.ref('issued_links/' + shortId).update(updates);
+                database.ref('issued_links/' + shortId).update(updates)
+                    .then(() => console.log('열람 통계 업데이트 완료'))
+                    .catch(e => console.warn('통계 업데이트 실패:', e.message));
+
             }).catch(err => {
                 alert("보안 뷰어 디코딩 실패: " + err.message);
             });

@@ -2,722 +2,231 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<meta name="mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="둘둘E-Book"/>
-<meta name="theme-color" content="#1a2340"/>
-<title>둘둘치킨 E-Book</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%%3E%%3Crect width='100' height='100' rx='22' fill='white'/%%3E%%3Cpath d='M50 85 C50 85 5 55 5 28 C5 13 17 3 30 3 C38 3 45 7 50 14 C55 7 62 3 70 3 C83 3 95 13 95 28 C95 55 50 85 50 85Z' fill='%%23E8001D'/%%3E%%3C/svg%%3E"/>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet"/>
-<style>
-:root{
-  --red:#E8001D;--white:#fff;
-  --bg-dark:#0a0f2e;
-  --topbar-h:52px;
-}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{
-  height:100%%;width:100%%;overflow:hidden;
-  font-family:'Noto Sans KR',sans-serif;
-  background:var(--bg-dark);
-  -webkit-font-smoothing:antialiased;
-  touch-action:pan-y;
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>둘둘치킨 보안 E-book 전용 플립북 뷰어</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/turn-js/turn.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
-/* ── 페이지 라우터 ── */
-.page{display:none;position:fixed;inset:0;z-index:1}
-.page.active{display:flex}
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Noto Sans KR', sans-serif; }
+        body, html { width: 100%; height: 100%; background: #0f172a; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        .hidden { display: none !important; }
 
-/* ══════════════════════════════
-   ERROR PAGES
-══════════════════════════════ */
-.error-page{
-  flex-direction:column;align-items:center;justify-content:center;
-  background:#0a0f2e;padding:32px;text-align:center;
-}
-.error-card{
-  background:#fff;border-radius:24px;padding:48px 40px;
-  max-width:400px;width:100%;
-  box-shadow:0 24px 60px rgba(0,0,0,.5);
-}
-.error-logo{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:28px;opacity:.8}
-.error-logo-icon{width:34px;height:34px;background:#fff;border:1.5px solid var(--red);border-radius:8px;display:flex;align-items:center;justify-content:center}
-.error-logo-icon svg{width:20px;height:20px;fill:var(--red)}
-.error-logo-text{font-size:14px;font-weight:900;color:#1a0a0a}
-.error-icon{font-size:52px;margin-bottom:18px}
-.error-tag{display:inline-block;padding:4px 14px;border-radius:100px;font-size:11px;font-weight:700;letter-spacing:.8px;margin-bottom:14px}
-.error-tag.red{background:rgba(232,0,29,.1);color:var(--red)}
-.error-tag.gray{background:#f0e8e8;color:#6b4040}
-.error-title{font-size:22px;font-weight:900;color:#1a0a0a;line-height:1.35;margin-bottom:10px}
-.error-desc{font-size:13px;color:#b08080;line-height:1.8;margin-bottom:28px}
-.error-contact{
-  padding:13px 20px;background:#fdf5f5;border:1px solid #e8d0d0;
-  border-radius:11px;font-size:13px;color:#6b4040;
-}
-.error-contact a{color:var(--red);font-weight:700;text-decoration:none}
-/* 비밀번호 */
-.pw-wrap{display:flex;gap:8px;margin-bottom:10px}
-.pw-input{
-  flex:1;padding:13px 14px;border:2px solid #e8d0d0;border-radius:10px;
-  font-size:14px;font-family:'Noto Sans KR',sans-serif;outline:none;
-  transition:border-color .2s;background:#fdf5f5;
-}
-.pw-input:focus{border-color:var(--red);background:#fff;box-shadow:0 0 0 4px rgba(232,0,29,.08)}
-.btn-pw{
-  padding:13px 18px;background:var(--red);color:#fff;border:none;
-  border-radius:10px;font-size:13px;font-weight:700;
-  font-family:'Noto Sans KR',sans-serif;cursor:pointer;white-space:nowrap;
-}
-.btn-pw:hover{background:#b0001a}
-.pw-error{font-size:12px;color:var(--red);font-weight:700;display:none;margin-bottom:10px}
-.pw-error.show{display:block}
+        .lock-screen { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); text-align: center; width: 90%; max-width: 400px; z-index: 999; }
+        .lock-screen i { font-size: 48px; color: #E60012; margin-bottom: 15px; }
+        .lock-screen h2 { font-size: 20px; margin-bottom: 10px; color: #1e293b; }
+        .lock-screen input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 15px; text-align: center; font-size: 16px; outline: none; }
+        .lock-screen button { width: 100%; padding: 12px; background: #E60012; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
 
-/* ══════════════════════════════
-   VIEWER PAGE
-══════════════════════════════ */
-#page-viewer{
-  flex-direction:column;
-  background:#0a0f2e;
-}
+        .viewer-container { width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; }
+        .viewer-header { background: rgba(15, 23, 42, 0.95); color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.1); z-index: 10; }
+        .viewer-header .title { font-weight: bold; display: flex; align-items: center; gap: 10px; font-size: 16px; }
+        .viewer-header .title i { color: #E60012; }
+        
+        .viewer-body { flex: 1; display: flex; justify-content: center; align-items: center; padding: 40px; position: relative; overflow: auto; }
+        #flipbook-wrapper { transition: transform 0.2s ease-out; transform-origin: center center; display: flex; justify-content: center; align-items: center; }
+        #flipbook { width: 900px; height: 600px; display: none; box-shadow: 0 25px 50px rgba(0,0,0,0.8); }
+        .page-node { background: white; width: 450px; height: 600px; position: relative; display: flex; justify-content: center; align-items: center; }
+        canvas { width: 100% !important; height: 100% !important; object-fit: contain; }
 
-/* Topbar */
-.viewer-topbar{
-  height:var(--topbar-h);flex-shrink:0;
-  background:rgba(0,0,0,.55);backdrop-filter:blur(12px);
-  -webkit-backdrop-filter:blur(12px);
-  border-bottom:1px solid rgba(255,255,255,.08);
-  display:flex;align-items:center;justify-content:space-between;
-  padding:0 16px;z-index:10;
-}
-.v-logo{display:flex;align-items:center;gap:8px}
-.v-logo-icon{width:28px;height:28px;background:#fff;border:1.5px solid var(--red);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.v-logo-icon svg{width:18px;height:18px;fill:var(--red)}
-.v-logo-text{font-size:13px;font-weight:900;color:#fff}
-.v-ctrl{display:flex;align-items:center;gap:8px}
-.vbtn{
-  padding:6px 14px;background:rgba(255,255,255,.12);
-  border:1px solid rgba(255,255,255,.2);color:#fff;
-  border-radius:8px;font-size:12px;font-weight:700;
-  font-family:'Noto Sans KR',sans-serif;cursor:pointer;
-  transition:background .15s;white-space:nowrap;
-}
-.vbtn:hover{background:rgba(232,0,29,.5);border-color:var(--red)}
-.vbtn:disabled{opacity:.3;cursor:not-allowed}
-.v-pagenum{font-size:12px;color:rgba(255,255,255,.7);min-width:70px;text-align:center}
-.v-customer{font-size:11px;color:rgba(255,255,255,.5);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-
-/* Viewer Body */
-.viewer-body{
-  flex:1;display:flex;align-items:center;justify-content:center;
-  position:relative;overflow:hidden;
-}
-
-/* Loading */
-.v-loading{
-  position:absolute;inset:0;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:14px;
-  background:rgba(26,35,64,.7);backdrop-filter:blur(4px);z-index:20;
-}
-.v-spinner{
-  width:44px;height:44px;border:3px solid rgba(255,255,255,.15);
-  border-top-color:var(--red);border-radius:50%;
-  animation:spin .65s linear infinite;
-}
-.v-loading-txt{font-size:14px;color:rgba(255,255,255,.7);font-weight:500}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-/* ── 책 컨테이너 ── */
-.book-container{
-  position:relative;
-  display:flex;align-items:center;justify-content:center;
-}
-.spread-wrap{
-  display:flex;align-items:stretch;
-  box-shadow:0 24px 80px rgba(0,0,0,.85);
-  position:relative;
-}
-.page-slot{
-  position:relative;overflow:hidden;background:#fff;
-  flex-shrink:0;
-}
-.left-slot{border-right:1px solid #ddd}
-.right-slot{border-left:1px solid #ddd}
-.page-slot canvas{display:block}
-.page-shadow-left{
-  position:absolute;top:0;right:0;width:40px;height:100%;
-  background:linear-gradient(to left,rgba(0,0,0,.18),transparent);
-  pointer-events:none;z-index:2;
-}
-.page-shadow-right{
-  position:absolute;top:0;left:0;width:40px;height:100%;
-  background:linear-gradient(to right,rgba(0,0,0,.12),transparent);
-  pointer-events:none;z-index:2;
-}
-.book-spine{
-  width:10px;flex-shrink:0;
-  background:linear-gradient(to right,#bbb 0%,#f0f0f0 40%,#e0e0e0 60%,#bbb 100%);
-  box-shadow:inset 0 0 6px rgba(0,0,0,.2);
-}
-
-/* ── 페이지 넘기기 오버레이 ── */
-.flip-overlay{
-  position:absolute;top:0;bottom:0;
-  width:50%;pointer-events:none;z-index:20;
-  transform-style:preserve-3d;
-  display:none;
-}
-.flip-overlay.from-right{
-  right:0;transform-origin:left center;
-}
-.flip-overlay.from-left{
-  left:0;transform-origin:right center;
-}
-.flip-overlay canvas{
-  position:absolute;top:0;left:0;
-  width:100%;height:100%;
-  object-fit:fill;
-}
-/* 페이지 넘기기 애니메이션 */
-@keyframes flipForward{
-  0%  {transform:rotateY(0deg);box-shadow:0 0 0 rgba(0,0,0,0)}
-  30% {box-shadow:-8px 0 20px rgba(0,0,0,.3)}
-  100%{transform:rotateY(-180deg);box-shadow:0 0 0 rgba(0,0,0,0)}
-}
-@keyframes flipBackward{
-  0%  {transform:rotateY(0deg)}
-  100%{transform:rotateY(180deg)}
-}
-.flip-overlay.animating-forward{
-  animation:flipForward .5s cubic-bezier(.645,.045,.355,1) forwards;
-}
-.flip-overlay.animating-backward{
-  animation:flipBackward .5s cubic-bezier(.645,.045,.355,1) forwards;
-}
-
-canvas{display:block}
-
-/* 좌우 화살표 (PC) */
-.nav-arrow{
-  position:absolute;top:50%%;transform:translateY(-50%%);
-  width:44px;height:70px;
-  background:rgba(255,255,255,.1);backdrop-filter:blur(8px);
-  border:1px solid rgba(255,255,255,.15);
-  border-radius:10px;color:#fff;font-size:26px;
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;z-index:10;transition:background .15s;
-  user-select:none;
-}
-.nav-arrow:hover{background:rgba(232,0,29,.45)}
-.nav-arrow:active{background:rgba(232,0,29,.7)}
-.nav-arrow.left{left:16px}
-.nav-arrow.right{right:16px}
-.nav-arrow.hidden{opacity:0;pointer-events:none}
-
-/* 모바일: 탭 영역 힌트 */
-.v-zoom-num{font-size:11px;color:rgba(255,255,255,.7);min-width:42px;text-align:center}
-
-/* 확대 시 스크롤 가능 */
-.viewer-body.zoomed{overflow:auto;align-items:flex-start;justify-content:flex-start;cursor:grab}
-.viewer-body.zoomed:active{cursor:grabbing}
-.book-container.zoomed{transform-origin:top left}
-
-.tap-hint{
-  position:absolute;bottom:20px;left:50%%;transform:translateX(-50%%);
-  background:rgba(0,0,0,.45);color:rgba(255,255,255,.6);
-  font-size:11px;padding:6px 14px;border-radius:100px;
-  pointer-events:none;transition:opacity .5s;
-  white-space:nowrap;
-}
-
-/* ── 반응형 ── */
-@media(max-width:700px){
-  .v-logo-text{display:none}
-  .v-customer{display:none}
-  .vbtn{padding:5px 10px;font-size:11px}
-  .v-pagenum{min-width:56px;font-size:11px}
-  .nav-arrow{display:none}
-  .book-spine{display:none}
-}
-</style>
+        .nav-controls { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; gap: 20px; background: rgba(30, 41, 59, 0.9); padding: 10px 25px; border-radius: 40px; z-index: 100; align-items: center; color: white; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(5px); }
+        .nav-controls button { background: none; border: none; color: white; font-size: 18px; cursor: pointer; padding: 0 10px; transition: 0.2s; }
+        .nav-controls button:hover { color: #E60012; transform: scale(1.1); }
+        .nav-controls .divider { width: 1px; height: 20px; background: rgba(255,255,255,0.2); }
+        
+        .loading-box { color: white; font-size: 16px; font-weight: bold; text-align: center; position: absolute; }
+        .loading-box i { font-size: 35px; margin-bottom: 12px; color: #E60012; display: block; }
+    </style>
 </head>
 <body>
 
-<svg style="display:none">
-  <symbol id="heart" viewBox="0 0 100 90">
-    <path d="M50 85 C50 85 5 55 5 28 C5 13 17 3 30 3 C38 3 45 7 50 14 C55 7 62 3 70 3 C83 3 95 13 95 28 C95 55 50 85 50 85Z"/>
-  </symbol>
-</svg>
-
-<!-- ═══ 만료 ═══ -->
-<div id="page-expired" class="page error-page">
-  <div class="error-card">
-    <div class="error-logo">
-      <div class="error-logo-icon"><svg viewBox="0 0 100 90"><use href="#heart"/></svg></div>
-      <span class="error-logo-text">둘둘치킨 E-Book</span>
-    </div>
-    <div class="error-icon">⏰</div>
-    <div class="error-tag red">링크 만료</div>
-    <h2 class="error-title">열람 기간이<br/>종료되었습니다</h2>
-    <p class="error-desc">이 문서의 열람 유효기간이 지났습니다.<br/>담당자에게 문의하시면 새 링크를 받으실 수 있습니다.</p>
-    <div class="error-contact">📞 문의&nbsp;<a href="tel:02-776-2277">02-776-2277</a></div>
-  </div>
-</div>
-
-<!-- ═══ 없음 ═══ -->
-<div id="page-notfound" class="page error-page">
-  <div class="error-card">
-    <div class="error-logo">
-      <div class="error-logo-icon"><svg viewBox="0 0 100 90"><use href="#heart"/></svg></div>
-      <span class="error-logo-text">둘둘치킨 E-Book</span>
-    </div>
-    <div class="error-icon">🔍</div>
-    <div class="error-tag gray">페이지 없음</div>
-    <h2 class="error-title">유효하지 않은<br/>링크입니다</h2>
-    <p class="error-desc">잘못된 주소이거나 삭제된 문서입니다.<br/>담당자에게 문의해 주세요.</p>
-    <div class="error-contact">📞 문의&nbsp;<a href="tel:02-776-2277">02-776-2277</a></div>
-  </div>
-</div>
-
-<!-- ═══ 비밀번호 ═══ -->
-<div id="page-locked" class="page error-page">
-  <div class="error-card">
-    <div class="error-logo">
-      <div class="error-logo-icon"><svg viewBox="0 0 100 90"><use href="#heart"/></svg></div>
-      <span class="error-logo-text">둘둘치킨 E-Book</span>
-    </div>
-    <div class="error-icon">🔐</div>
-    <div class="error-tag red">비밀번호 보호</div>
-    <h2 class="error-title">비밀번호를<br/>입력해 주세요</h2>
-    <p class="error-desc" style="margin-bottom:18px">담당자로부터 받은 비밀번호를 입력해 주세요.</p>
-    <div class="pw-wrap">
-      <input type="password" class="pw-input" id="pwInput" placeholder="비밀번호"/>
-      <button class="btn-pw" id="btnPw">확인</button>
-    </div>
-    <div class="pw-error" id="pwError">⚠ 비밀번호가 올바르지 않습니다.</div>
-    <div class="error-contact">📞 문의&nbsp;<a href="tel:02-776-2277">02-776-2277</a></div>
-  </div>
-</div>
-
-<!-- ═══ 뷰어 ═══ -->
-<div id="page-viewer" class="page">
-  <div class="viewer-topbar">
-    <div class="v-logo">
-      <div class="v-logo-icon"><svg viewBox="0 0 100 90"><use href="#heart"/></svg></div>
-      <span class="v-logo-text">둘둘치킨 E-Book</span>
-    </div>
-    <div class="v-ctrl">
-      <button class="vbtn" id="btnPrev" disabled>◀</button>
-      <span class="v-pagenum" id="pageNum">- / -</span>
-      <button class="vbtn" id="btnNext" disabled>▶</button>
-      <button class="vbtn" id="btnZoomOut" title="축소">－</button>
-      <span class="v-zoom-num" id="zoomNum">100%</span>
-      <button class="vbtn" id="btnZoomIn" title="확대">＋</button>
-    </div>
-    <div class="v-customer" id="vCustomer"></div>
-  </div>
-
-  <div class="viewer-body" id="viewerBody">
-    <div class="v-loading" id="vLoading">
-      <div class="v-spinner"></div>
-      <div class="v-loading-txt">문서를 불러오는 중...</div>
+    <div id="lockScreen" class="lock-screen hidden">
+        <i class="fas fa-heart"></i>
+        <h2>둘둘치킨 보안 E-book</h2>
+        <p id="lockTarget" style="margin-bottom:20px; font-size:14px; color:#64748b;"></p>
+        <input type="password" id="viewerPwdInput" placeholder="인증 비밀번호를 입력하세요">
+        <button id="unlockBtn">보안 열람 시작</button>
     </div>
 
-    <!-- PC 좌우 화살표 -->
-    <div class="nav-arrow left hidden" id="arrowL" onclick="goPage(-1)">‹</div>
-    <div class="nav-arrow right hidden" id="arrowR" onclick="goPage(1)">›</div>
-
-    <!-- 캔버스 (PC: 2페이지 / 모바일: 1페이지) -->
-    <div class="book-container" id="bookContainer" style="display:none">
-      <!-- 페이지 넘기기 애니메이션 오버레이 -->
-      <div class="flip-overlay" id="flipOverlay">
-        <canvas id="flipCanvas"></canvas>
-      </div>
-      <!-- 실제 페이지 -->
-      <div class="spread-wrap" id="spreadWrap">
-        <div class="page-slot left-slot" id="leftSlot">
-          <canvas id="canvasLeft"></canvas>
-          <div class="page-shadow-left"></div>
+    <div id="viewerScreen" class="viewer-container hidden">
+        <div class="viewer-header">
+            <div class="title"><i class="fas fa-heart"></i> <span id="docTitleDisplay">문서 로딩 중...</span></div>
+            <div id="recipientDisplay" style="color:#94a3b8; font-weight:500;"></div>
         </div>
-        <div class="book-spine" id="bookSpine"></div>
-        <div class="page-slot right-slot" id="rightSlot">
-          <canvas id="canvasRight"></canvas>
-          <div class="page-shadow-right"></div>
+        
+        <div class="viewer-body">
+            <div id="loadingBox" class="loading-box"><i class="fas fa-circle-notch fa-spin"></i>안전한 보안 환경에서 전자책을 구성 중입니다...</div>
+            <div id="flipbook-wrapper">
+                <div id="flipbook"></div>
+            </div>
         </div>
-      </div>
+
+        <div class="nav-controls">
+            <button id="prevBtn" title="이전 페이지"><i class="fas fa-chevron-left"></i></button>
+            <span id="pageIndicator" style="min-width: 60px; text-align: center; font-weight: bold;">0 / 0</span>
+            <button id="nextBtn" title="다음 페이지"><i class="fas fa-chevron-right"></i></button>
+            <div class="divider"></div>
+            <button id="zoomOutBtn" title="축소"><i class="fas fa-magnifying-glass-minus"></i></button>
+            <button id="zoomInBtn" title="확대"><i class="fas fa-magnifying-glass-plus"></i></button>
+        </div>
     </div>
 
-    <!-- 모바일 힌트 -->
-    <div class="tap-hint" id="tapHint">← 왼쪽/오른쪽 탭으로 페이지 이동 →</div>
-  </div>
-</div>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-<!-- PDF.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAXqFNbDuK-NylDPoHIB4QrpYdbg5BZTEY",
+            authDomain: "twotwo-e-book.firebaseapp.com",
+            databaseURL: "https://twotwo-e-book-default-rtdb.asia-southeast1.firebasedatabase.app", 
+            projectId: "twotwo-e-book",
+            storageBucket: "twotwo-e-book.firebasestorage.app"
+        };
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc }
-  from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
 
-const FB = {
-  apiKey:"AIzaSyAXqFNbDuK-NylDPoHIB4QrpYdbg5BZTEY",
-  authDomain:"twotwo-e-book.firebaseapp.com",
-  projectId:"twotwo-e-book",
-  storageBucket:"twotwo-e-book.firebasestorage.app",
-  messagingSenderId:"1018023949536",
-  appId:"1:1018023949536:web:6b0d7de3ad822746708c85"
-};
+        const urlParams = new URLSearchParams(window.location.search);
+        const shortId = urlParams.get('id');
+        let linkData = null;
+        let currentZoom = 1.0;
 
-const app = initializeApp(FB);
-const db  = getFirestore(app);
+        if (!shortId) {
+            document.body.innerHTML = "<div style='color:white; font-weight:bold; padding:20px;'>❌ 유효하지 않은 접근 주소입니다.</div>";
+        } else {
+            database.ref('issued_links/' + shortId).once('value').then(snapshot => {
+                if (!snapshot.exists()) {
+                    document.body.innerHTML = "<div style='color:white; font-weight:bold; padding:20px;'>❌ 파기되었거나 존재하지 않는 보안 링크입니다.</div>";
+                    return;
+                }
+                linkData = snapshot.val();
+                
+                const today = new Date().toISOString().split('T')[0];
+                if (linkData.expireDate && today > linkData.expireDate) {
+                    document.body.innerHTML = "<div style='color:white; font-weight:bold; padding:20px;'>🔒 열람 기간이 만료된 주소입니다.</div>";
+                    return;
+                }
 
-// ── 상태 ──
-let pdfDoc=null, curPage=1, totalPages=0;
-let isRendering=false, isFlipping=false;
-let linkData=null, linkId=null;
-const DPR=Math.min(window.devicePixelRatio||1,2);
-const isMobile=()=>window.innerWidth<=700;
-let pageW=0, pageH=0;
+                if (linkData.password) {
+                    document.getElementById('lockScreen').classList.remove('hidden');
+                    document.getElementById('lockTarget').innerText = `${linkData.recipient} 점주님께 발송된 보안 문서입니다.`;
+                } else {
+                    openSecureViewer();
+                }
+            }).catch(err => {
+                document.body.innerHTML = "<div style='color:white; padding:20px;'>시스템 초기화 실패</div>";
+            });
+        }
 
-// ── URL 파라미터 ──
-const id=new URLSearchParams(location.search).get("id");
-if(!id){ showPage("notfound"); }
-else { initViewer(id); }
+        document.getElementById('unlockBtn').addEventListener('click', () => {
+            if (document.getElementById('viewerPwdInput').value === linkData.password) {
+                openSecureViewer();
+            } else {
+                alert('🔑 비밀번호가 일치하지 않습니다.');
+            }
+        });
 
-// ── 초기화 ──
-async function initViewer(lid){
-  linkId=lid;
-  showPage("viewer");
-  try{
-    const snap=await getDoc(doc(db,"links",lid));
-    if(!snap.exists()||!snap.data().active){ showPage("notfound");return }
-    const d=snap.data();
-    linkData=d;
-    // 만료 체크
-    if(d.expireDate&&new Date(d.expireDate)<new Date(today())){ showPage("expired");return }
-    // 비밀번호 체크
-    if(d.usePassword){ showPage("locked"); setupPw(d); return }
-    startViewer(d);
-  }catch(e){ console.error(e); showPage("notfound") }
-}
+        document.getElementById('viewerPwdInput').addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') document.getElementById('unlockBtn').click();
+        });
 
-function setupPw(d){
-  const btn=document.getElementById("btnPw");
-  const inp=document.getElementById("pwInput");
-  const err=document.getElementById("pwError");
-  const go=()=>{
-    if(inp.value===d.password){ showPage("viewer"); startViewer(d); }
-    else{ err.classList.add("show"); inp.value=""; inp.focus(); }
-  };
-  btn.onclick=go;
-  inp.onkeydown=e=>{ if(e.key==="Enter") go(); };
-}
+        async function openSecureViewer() {
+            document.getElementById('lockScreen').classList.add('hidden');
+            document.getElementById('viewerScreen').classList.remove('hidden');
+            document.getElementById('docTitleDisplay').innerText = linkData.fileName;
+            document.getElementById('recipientDisplay').innerText = `수신: ${linkData.recipient} 명의`;
 
-async function startViewer(d){
-  document.getElementById("vCustomer").textContent=d.customerName||"";
-  if(d.noDownload){
-    document.addEventListener("contextmenu",e=>e.preventDefault());
-    document.addEventListener("keydown",e=>{
-      if((e.ctrlKey||e.metaKey)&&["s","p","u"].includes(e.key)) e.preventDefault();
-    });
-  }
-  // 열람 통계 기록
-  recordView(d);
+            database.ref('master_files/' + linkData.fileKey).once('value').then(async masterSnap => {
+                if(!masterSnap.exists()) return alert('마스터 파일을 찾을 수 없습니다.');
+                
+                const masterData = masterSnap.val();
+                
+                // 🔥 CORS 에러 완벽 회피 우회 엔진 탑재 (Base64 다이렉트 변환 처리 검증)
+                let pdfTarget = masterData.fileUrl;
+                if (pdfTarget.startsWith('data:application/pdf;base64,')) {
+                    const base64Content = pdfTarget.split(',')[1];
+                    const raw = window.atob(base64Content);
+                    const rawLength = raw.length;
+                    const array = new Uint8Array(new ArrayBuffer(rawLength));
+                    for (let i = 0; i < rawLength; i++) { array[i] = raw.charCodeAt(i); }
+                    pdfTarget = array;
+                }
 
-  pdfjsLib.GlobalWorkerOptions.workerSrc=
-    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+                const loadingTask = pdfjsLib.getDocument({data: pdfTarget, disableCORS: true, disableAutoFetch: true});
+                const pdf = await loadingTask.promise;
+                const totalPages = pdf.numPages;
+                const flipbook = $('#flipbook');
+                
+                const renderScale = 2.0;
 
-  try{
-    const pdf=await pdfjsLib.getDocument({url:d.pdfUrl,withCredentials:false}).promise;
-    pdfDoc=pdf;
-    totalPages=pdf.numPages;
-    // totalPages Firestore에 저장 (통계 진행률 계산용)
-    try{ await updateDoc(doc(db,"links",linkId),{totalPages}); }catch(e){}
-    curPage=1;
-    hideLoading();
-    await initSpread();
-    setupNav();
-    setupSwipe();
-    hideTapHint();
-  }catch(e){
-    console.error(e);
-    document.getElementById("vLoading").innerHTML=
-      "<p style=\'color:#f88;font-size:14px;text-align:center\'>문서를 불러올 수 없습니다.<br/>잠시 후 다시 시도해 주세요.</p>";
-  }
-}
+                for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+                    const pageNode = $('<div class="page-node"></div>');
+                    const canvas = document.createElement('canvas');
+                    pageNode.append(canvas);
+                    flipbook.append(pageNode);
 
-// ── 크기 계산 ──
-async function initSpread(){
-  const body=document.getElementById("viewerBody");
-  const mob=isMobile();
-  const availW=body.clientWidth-(mob?0:130);
-  const availH=body.clientHeight-20;
+                    const page = await pdf.getPage(pageNum);
+                    const viewport = page.getViewport({ scale: renderScale });
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
 
-  const sample=await pdfDoc.getPage(1);
-  const vp0=sample.getViewport({scale:1});
+                    await page.render({ canvasContext: context, viewport: viewport }).promise;
+                }
 
-  const slots=mob?1:2;
-  let w=Math.floor(availW/slots);
-  let h=Math.floor(w/vp0.width*vp0.height);
-  if(h>availH){h=availH;w=Math.floor(h/vp0.height*vp0.width)}
-  pageW=w; pageH=h;
+                $('#loadingBox').hide();
+                flipbook.show();
 
-  // spine 표시 여부
-  document.getElementById("bookSpine").style.display=mob?"none":"";
-  document.getElementById("rightSlot").style.display=mob?"none":"";
+                flipbook.turn({
+                    width: 900,
+                    height: 600,
+                    elevation: 50,
+                    gradients: true,
+                    autoCenter: true,
+                    duration: 800,
+                    when: {
+                        turned: function(e, page) {
+                            $('#pageIndicator').text(`${page} / ${totalPages}`);
+                        }
+                    }
+                });
 
-  document.getElementById("bookContainer").style.display="";
-  await renderSpread(curPage);
-}
+                $('#prevBtn').click(() => flipbook.turn('previous'));
+                $('#nextBtn').click(() => flipbook.turn('next'));
 
-// ── 페이지 렌더 (고해상도) ──
-async function renderOnCanvas(num, canvas){
-  if(num<1||num>totalPages){
-    const ctx=canvas.getContext("2d");
-    ctx.fillStyle="#fff";
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-    return;
-  }
-  const page=await pdfDoc.getPage(num);
-  const vp0=page.getViewport({scale:1});
-  const scale=Math.min(pageW/vp0.width,pageH/vp0.height)*DPR;
-  const vp=page.getViewport({scale});
-  canvas.width=vp.width; canvas.height=vp.height;
-  canvas.style.width=pageW+"px"; canvas.style.height=pageH+"px";
-  await page.render({canvasContext:canvas.getContext("2d"),viewport:vp}).promise;
-}
+                const updateZoom = () => {
+                    $('#flipbook-wrapper').css('transform', `scale(${currentZoom})`);
+                };
 
-async function renderSpread(left){
-  const mob=isMobile();
-  const cL=document.getElementById("canvasLeft");
-  const cR=document.getElementById("canvasRight");
-  await renderOnCanvas(left,cL);
-  if(!mob) await renderOnCanvas(left+1,cR);
-  updateNav(left);
-}
+                $('#zoomInBtn').click(() => {
+                    if (currentZoom < 2.5) { currentZoom += 0.2; updateZoom(); }
+                });
 
-// ── 페이지 이동 (책장 넘기기) ──
-window.goPage=async function(dir){
-  if(isFlipping) return;
-  const mob=isMobile();
-  const step=mob?1:2;
-  const next=curPage+(dir>0?step:-step);
-  if(next<1||next>totalPages) return;
-  isFlipping=true;
+                $('#zoomOutBtn').click(() => {
+                    if (currentZoom > 0.5) { currentZoom -= 0.2; updateZoom(); }
+                });
 
-  // 넘길 페이지 캔버스 미리 렌더
-  const flipCanvas=document.getElementById("flipCanvas");
-  const flipPage=dir>0?(mob?curPage:curPage+1):next;
-  await renderOnCanvas(flipPage,flipCanvas);
-  flipCanvas.style.width=pageW+"px";
-  flipCanvas.style.height=pageH+"px";
+                if (linkData.blockDownload === 'Y') {
+                    window.addEventListener('keydown', e => {
+                        if (e.ctrlKey && (e.key === 'p' || e.key === 's' || e.key === 'u')) e.preventDefault();
+                    });
+                    document.addEventListener('contextmenu', e => e.preventDefault());
+                }
 
-  // 오버레이 위치 설정
-  const ov=document.getElementById("flipOverlay");
-  const sw=document.getElementById("spreadWrap");
-  const rect=sw.getBoundingClientRect();
-  ov.style.cssText=`position:absolute;top:0;height:${pageH}px;width:${pageW}px;display:block;transform-style:preserve-3d;`;
-
-  if(dir>0){
-    // 오른쪽 페이지가 왼쪽으로 넘어감
-    ov.style.right="0";ov.style.left="auto";
-    ov.style.transformOrigin="left center";
-    ov.className="flip-overlay from-right";
-  } else {
-    // 왼쪽 페이지가 오른쪽으로 넘어감
-    ov.style.left="0";ov.style.right="auto";
-    ov.style.transformOrigin="right center";
-    ov.className="flip-overlay from-left";
-  }
-
-  // 애니메이션 시작
-  requestAnimationFrame(()=>{
-    ov.classList.add(dir>0?"animating-forward":"animating-backward");
-  });
-
-  // 애니메이션 중 실제 페이지 렌더
-  setTimeout(async()=>{
-    curPage=next;
-    await renderSpread(curPage);
-    ov.style.display="none";
-    ov.className="flip-overlay";
-    isFlipping=false;
-  },260);
-
-  // 통계: 마지막 페이지 업데이트
-  try{
-    await setDoc(doc(db,"stats",linkId),{
-      lastPage:next,
-      lastViewAt:new Date().toISOString(),
-    },{merge:true});
-  }catch(e){ console.error("페이지 통계 오류:",e.message); }
-};
-
-function updateNav(num){
-  const mob=isMobile();
-  const rightPage=mob?num:num+1;
-  const last=mob?totalPages:totalPages-1;
-  const display=mob?num+" / "+totalPages:num+" - "+Math.min(num+1,totalPages)+" / "+totalPages;
-  document.getElementById("pageNum").textContent=display;
-  document.getElementById("btnPrev").disabled=num<=1;
-  document.getElementById("btnNext").disabled=mob?num>=totalPages:num+1>=totalPages;
-  document.getElementById("arrowL").classList.toggle("hidden",num<=1);
-  document.getElementById("arrowR").classList.toggle("hidden",mob?num>=totalPages:num+1>=totalPages);
-}
-
-let zoomLevel=1;
-const ZOOM_STEP=0.25;
-const ZOOM_MIN=0.5;
-const ZOOM_MAX=3.0;
-
-function setupNav(){
-  document.getElementById("btnPrev").onclick=()=>goPage(-1);
-  document.getElementById("btnNext").onclick=()=>goPage(1);
-
-  document.getElementById("btnZoomIn").onclick=()=>applyZoom(zoomLevel+ZOOM_STEP);
-  document.getElementById("btnZoomOut").onclick=()=>applyZoom(zoomLevel-ZOOM_STEP);
-  // 키보드
-  document.addEventListener("keydown",e=>{
-    if(e.key==="ArrowRight"||e.key==="ArrowDown") goPage(1);
-    if(e.key==="ArrowLeft"||e.key==="ArrowUp") goPage(-1);
-    if(e.key==="+"||e.key==="=") applyZoom(zoomLevel+ZOOM_STEP);
-    if(e.key==="-") applyZoom(zoomLevel-ZOOM_STEP);
-    if(e.key==="0") applyZoom(1);
-  });
-  // 핀치줌 (모바일)
-  let lastDist=0;
-  document.addEventListener("touchstart",e=>{
-    if(e.touches.length===2){
-      lastDist=Math.hypot(
-        e.touches[0].clientX-e.touches[1].clientX,
-        e.touches[0].clientY-e.touches[1].clientY
-      );
-    }
-  },{passive:true});
-  document.addEventListener("touchmove",e=>{
-    if(e.touches.length===2){
-      const dist=Math.hypot(
-        e.touches[0].clientX-e.touches[1].clientX,
-        e.touches[0].clientY-e.touches[1].clientY
-      );
-      if(lastDist>0){
-        const delta=(dist-lastDist)/lastDist;
-        applyZoom(Math.min(ZOOM_MAX,Math.max(ZOOM_MIN,zoomLevel+delta)));
-      }
-      lastDist=dist;
-    }
-  },{passive:true});
-}
-
-function applyZoom(z){
-  zoomLevel=Math.min(ZOOM_MAX,Math.max(ZOOM_MIN,Math.round(z*4)/4));
-  const bc=document.getElementById("bookContainer");
-  const body=document.getElementById("viewerBody");
-  bc.style.transform=`scale(${zoomLevel})`;
-  bc.style.transformOrigin="top center";
-  if(zoomLevel>1){
-    body.classList.add("zoomed");
-    body.style.overflow="auto";
-    body.style.alignItems="flex-start";
-    body.style.justifyContent="center";
-    body.style.paddingTop="20px";
-  } else {
-    body.classList.remove("zoomed");
-    body.style.overflow="hidden";
-    body.style.alignItems="center";
-    body.style.justifyContent="center";
-    body.style.paddingTop="";
-  }
-  document.getElementById("zoomNum").textContent=Math.round(zoomLevel*100)+"%";
-  document.getElementById("btnZoomOut").disabled=zoomLevel<=ZOOM_MIN;
-  document.getElementById("btnZoomIn").disabled=zoomLevel>=ZOOM_MAX;
-}
-
-// ── 터치 스와이프 + 탭 ──
-function setupSwipe(){
-  const body=document.getElementById("viewerBody");
-  let tx=0,ty=0,moved=false;
-  body.addEventListener("touchstart",e=>{
-    tx=e.touches[0].clientX;ty=e.touches[0].clientY;moved=false;
-  },{passive:true});
-  body.addEventListener("touchmove",e=>{
-    if(Math.abs(e.touches[0].clientX-tx)>8) moved=true;
-  },{passive:true});
-  body.addEventListener("touchend",e=>{
-    const dx=e.changedTouches[0].clientX-tx;
-    const dy=e.changedTouches[0].clientY-ty;
-    if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>40){
-      // 스와이프
-      goPage(dx<0?1:-1);
-    } else if(!moved&&Math.abs(dx)<10&&Math.abs(dy)<10){
-      // 탭: 왼쪽 1/3 = 이전, 오른쪽 2/3 = 다음
-      const x=e.changedTouches[0].clientX;
-      goPage(x<window.innerWidth/3?-1:1);
-    }
-  },{passive:true});
-}
-
-function hideTapHint(){
-  const h=document.getElementById("tapHint");
-  setTimeout(()=>{ h.style.opacity="0"; setTimeout(()=>h.remove(),600); },3000);
-}
-
-// ── 열람 통계 ──
-async function recordView(d){
-  try{
-    const ref=doc(db,"stats",linkId);
-    const ua=navigator.userAgent;
-    const device=/Mobi|Android|iPhone|iPad/i.test(ua)?"mobile":"desktop";
-    const now=new Date().toISOString();
-    // getDoc으로 기존 데이터 확인
-    let snap;
-    try{ snap=await getDoc(ref); }catch(e){ snap={exists:()=>false}; }
-
-    if(!snap.exists()){
-      // 최초 열람
-      await setDoc(ref,{
-        linkId:linkId,
-        customerName:d.customerName,
-        firstViewAt:now,
-        lastViewAt:now,
-        viewCount:1,
-        lastPage:1,
-        device:device,
-      });
-      console.log("통계 최초 기록 완료");
-    } else {
-      // 재열람 - increment 사용
-      const prev=snap.data();
-      await setDoc(ref,{
-        lastViewAt:now,
-        viewCount:(prev.viewCount||0)+1,
-        device:device,
-        // firstViewAt은 유지 (merge:true로)
-      },{merge:true});
-      console.log("통계 업데이트 완료, 횟수:",(prev.viewCount||0)+1);
-    }
-  }catch(e){
-    console.error("통계 기록 오류:",e.code, e.message);
-  }
-}
-
-// ── 유틸 ──
-function showPage(name){
-  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
-  const el=document.getElementById("page-"+name);
-  if(el) el.classList.add("active");
-}
-
-function hideLoading(){
-  document.getElementById("vLoading").style.display="none";
-}
-
-function today(){
-  return new Date().toISOString().split("T")[0];
-}
-</script>
+                const nowStr = new Date().toLocaleString();
+                const updates = { isViewed: "열람", lastView: nowStr, viewCount: (linkData.viewCount || 0) + 1 };
+                if (!linkData.firstView || linkData.firstView === "-") updates.firstView = nowStr;
+                database.ref('issued_links/' + shortId).update(updates);
+            }).catch(err => {
+                alert("보안 뷰어 디코딩 실패: " + err.message);
+            });
+        }
+    </script>
 </body>
 </html>
